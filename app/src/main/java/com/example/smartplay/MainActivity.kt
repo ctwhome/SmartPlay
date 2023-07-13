@@ -12,9 +12,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        supportActionBar?.hide() // Hide the action bar
+
         val buttonOpenSecondActivity: Button = findViewById(R.id.button_open_second_activity)
         buttonOpenSecondActivity.setOnClickListener {
-            val intent = Intent(this@MainActivity, SecondActivity::class.java)
+            val intent = Intent(this@MainActivity, PasswordActivity::class.java)
             startActivity(intent)
         }
     }
