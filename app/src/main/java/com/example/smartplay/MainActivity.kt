@@ -14,9 +14,15 @@ class MainActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
-        val buttonOpenSecondActivity: Button = findViewById(R.id.button_open_second_activity)
+        val buttonOpenSecondActivity: Button = findViewById(R.id.button_enter_password)
         buttonOpenSecondActivity.setOnClickListener {
             val intent = Intent(this@MainActivity, PasswordActivity::class.java)
+            startActivity(intent)
+        }
+
+        val buttonRecordingActivity: Button = findViewById(R.id.button_record)
+        buttonRecordingActivity.setOnClickListener {
+            val intent = Intent(this@MainActivity, RecordingActivity::class.java)
             startActivity(intent)
         }
     }

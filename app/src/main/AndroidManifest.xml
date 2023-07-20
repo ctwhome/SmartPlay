@@ -3,6 +3,14 @@
 
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <!-- Required permissions for your app -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/btn_star_big_on"
@@ -23,6 +31,7 @@
 
         <activity android:name=".SettingsActivity" android:theme="@style/Theme.AppCompat.Light"/>
         <activity android:name=".PasswordActivity" android:theme="@style/Theme.AppCompat.Light"/>
+        <activity android:name=".RecordingActivity" android:theme="@style/Theme.AppCompat.Light"/>
 
     </application>
 
