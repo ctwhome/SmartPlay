@@ -33,7 +33,28 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var gyroscopeSensor: Sensor? = null
     private var magnetometerSensor: Sensor? = null
     private var isRecording = false
+
     private var lastUpdateTime: Long = 0
+    private var latitude: Double = 0.0
+    private var longitud: Double = 0.0
+
+    private var heartRate: Float = 0F
+
+    private var accelX: Float = 0F
+    private var accelY: Float = 0F
+    private var accelZ: Float = 0F
+
+    private var gyroX: Float = 0F
+    private var gyroY: Float = 0F
+    private var gyroZ: Float = 0F
+
+    private var magnetoX: Float = 0F
+    private var magnetoY: Float = 0F
+    private var magnetoZ: Float = 0F
+
+    private var timestamp: Long = 0
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,32 +62,33 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         supportActionBar?.hide() // Hide the action bar
 
-//        val startButton = findViewById<Button>(R.id.startButton)
-//        val stopButton = findViewById<Button>(R.id.stopButton)
-//
-//        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-//        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-//
-//        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
-//        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-//        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-//        magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-//
-//        startButton.setOnClickListener {
-//            if (!isRecording) {
-//                startRecording()
-//                startButton.visibility = Button.GONE
-//                stopButton.visibility = Button.VISIBLE
-//            }
-//        }
-//
-//        stopButton.setOnClickListener {
-//            if (isRecording) {
-//                stopRecording()
-//                startButton.visibility = Button.VISIBLE
-//                stopButton.visibility = Button.GONE
-//            }
-//        }
+        val startButton = findViewById<Button>(R.id.startButton)
+        val stopButton = findViewById<Button>(R.id.stopButton)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+
+        startButton.setOnClickListener {
+            println("Start button pressed" )
+            if (!isRecording) {
+                startButton.visibility = Button.GONE
+                stopButton.visibility = Button.VISIBLE
+                startRecording()
+            }
+        }
+
+        stopButton.setOnClickListener {
+            if (isRecording) {
+                startButton.visibility = Button.VISIBLE
+                stopButton.visibility = Button.GONE
+                stopRecording()
+            }
+        }
     }
 
     private fun startRecording() {
@@ -99,36 +121,55 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
-    /*override fun onSensorChanged(event: SensorEvent) {
-        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) {
-            val timestamp = System.currentTimeMillis()
-            lastUpdateTime = SystemClock.elapsedRealtime()
-            when (event.sensor.type) {
-                Sensor.TYPE_HEART_RATE -> {
-                    val heartRate = event.values[0]
-                    writeDataToCSV(timestamp, heartRate = heartRate)
-                }
-                Sensor.TYPE_ACCELEROMETER -> {
-                    val x = event.values[0]
-                    val y = event.values[1]
-                    val z = event.values[2]
-                    writeDataToCSV(timestamp, accelX = x, accelY = y, accelZ = z)
-                }
-                Sensor.TYPE_GYROSCOPE -> {
-                    val x = event.values[0]
-                    val y = event.values[1]
-                    val z = event.values[2]
-                    writeDataToCSV(timestamp, gyroX = x, gyroY = y, gyroZ = z)
-                }
-                Sensor.TYPE_MAGNETIC_FIELD -> {
-                    val x = event.values[0]
-                    val y = event.values[1]
-                    val z = event.values[2]
-                    writeDataToCSV(timestamp, magnetoX = x, magnetoY = y, magnetoZ = z)
-                }
+    override fun onSensorChanged(event: SensorEvent) {
+
+        when (event.sensor.type) {
+            Sensor.TYPE_HEART_RATE -> {
+                heartRate = event.values[0]
+                writeDataToCSV(timestamp, heartRate = heartRate)
+            }
+            Sensor.TYPE_ACCELEROMETER -> {
+                accelX = event.values[0]
+                accelY = event.values[1]
+                accelZ = event.values[2]
+//                writeDataToCSV(timestamp, accelX = x, accelY = y, accelZ = z)
+            }
+            Sensor.TYPE_GYROSCOPE -> {
+                gyroX = event.values[0]
+                gyroY = event.values[1]
+                gyroZ = event.values[2]
+//                writeDataToCSV(timestamp, gyroX = x, gyroY = y, gyroZ = z)
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                magnetoX = event.values[0]
+                magnetoY = event.values[1]
+                magnetoZ = event.values[2]
             }
         }
-    }*/
+
+
+        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) {
+            val timestamp = System.currentTimeMillis()
+                writeDataToCSV(
+                    timestamp,
+                    latitude,
+                    longitud,
+                    heartRate,
+                    accelX,
+                    accelY,
+                    accelZ,
+                    magnetoX,
+                    magnetoY,
+                    magnetoZ,
+                    gyroX,
+                    gyroY,
+                    gyroZ,
+                )
+
+            lastUpdateTime = SystemClock.elapsedRealtime()
+
+        }
+    }
 
     private fun writeDataToCSV(
         timestamp: Long,
@@ -150,10 +191,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         } catch (e: IOException) {
             e.printStackTrace()
         }
-    }
-
-    override fun onSensorChanged(p0: SensorEvent?) {
-        TODO("Not yet implemented")
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
