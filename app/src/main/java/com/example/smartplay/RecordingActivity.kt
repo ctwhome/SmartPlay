@@ -1,6 +1,7 @@
 package com.example.smartplay
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.*
@@ -11,6 +12,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.SystemClock
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -121,6 +123,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     override fun onSensorChanged(event: SensorEvent) {
 
         when (event.sensor.type) {
@@ -149,22 +152,36 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
 
         if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) {
+
+            // Write the sensor data on the screen
+            val sensorData = findViewById<TextView>(R.id.sensorData)
+
+
             val timestamp = System.currentTimeMillis()
-                writeDataToCSV(
-                    timestamp,
-                    latitude,
-                    longitud,
-                    heartRate,
-                    accelX,
-                    accelY,
-                    accelZ,
-                    magnetoX,
-                    magnetoY,
-                    magnetoZ,
-                    gyroX,
-                    gyroY,
-                    gyroZ,
-                )
+            sensorData.setText(
+                "⏱️" + timestamp.toString()
+                + "\n❤️ " + heartRate.toString()
+                + "\n🌍 " + latitude.toString() + " " + longitud.toString()
+                + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString()
+                + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString()
+                + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
+
+            )
+            writeDataToCSV(
+                timestamp,
+                latitude,
+                longitud,
+                heartRate,
+                accelX,
+                accelY,
+                accelZ,
+                magnetoX,
+                magnetoY,
+                magnetoZ,
+                gyroX,
+                gyroY,
+                gyroZ,
+            )
 
             lastUpdateTime = SystemClock.elapsedRealtime()
 
