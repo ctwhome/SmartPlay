@@ -2,22 +2,19 @@
 Android OS Wear Application to measure children's activity when playing
 
 
-### Installing the application on the device
-Make sure you have adb installed on your computer and 
-1. Connect the watch to your computer
+### ⌚️ Installing the application on the device
+Make sure you have adb installed on your computer and the watch is connected to your computer, via usb or wifi.
+Note: I could only install the application via Wifi Debugging, check the notes below on how to install it. 
+
 ```shell
 adb -s <device_id> install -r /path/to/your/app-debug.apk
 ```
 
-Getting the data from the device:
+Path to getting the data from the device:
 ![Screenshot 2023-07-24 at 21 50 14](https://github.com/ctwhome/SmartPlay/assets/4195550/cfc87b19-d0e8-41cc-ba41-6c2abad2a9c8)
 
-Building the App with Android Studio
-<img width="430" alt="image" src="https://github.com/ctwhome/SmartPlay/assets/4195550/4fce25a8-f6ba-426d-b83f-530c25117c81">
 
-
-
-Notes: 
+## 🛜 Connecting the smartwatch via Wifi Debugging
 I couldn't make the installation of the application work via usb cable, but yes over wifi debugging.
 
 On the watch
@@ -40,3 +37,7 @@ During the installation, I had to restart the adb server to make it work at time
 adb kill-server
 adb start-server
 ```
+
+
+## 🛠️ Building the App with Android Studio
+<img width="430" alt="image" src="https://github.com/ctwhome/SmartPlay/assets/4195550/4fce25a8-f6ba-426d-b83f-530c25117c81">
