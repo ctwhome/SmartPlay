@@ -40,4 +40,4 @@ adb start-server
 
 
 ## 🛠️ Building the App with Android Studio
-<img width="430" alt="image" src="https://github.com/ctwhome/SmartPlay/assets/4195550/4fce25a8-f6ba-426d-b83f-530c25117c81">
+![image](https://github.com/ctwhome/SmartPlay/assets/4195550/ff8c7315-226e-464b-80a8-f83cd2692d71)
