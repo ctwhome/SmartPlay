@@ -2,12 +2,16 @@ package com.example.smartplay
 
 import android.Manifest
 import android.annotation.SuppressLint
+//import android.app.AlertDialog
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.*
+
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+
 import android.os.Bundle
 import android.os.Environment
 import android.os.SystemClock
@@ -21,6 +25,7 @@ import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 import kotlin.math.abs
+import android.util.Log
 
 
 
@@ -38,7 +43,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private var lastUpdateTime: Long = 0
     private var latitude: Double = 0.0
-    private var longitud: Double = 0.0
+    private var longitude: Double = 0.0
 
     private var heartRate: Float = 0F
 
@@ -56,7 +61,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private var timestamp: Long = 0
 
+    private val locationListener: LocationListener = LocationListener { location ->
+        latitude = location.latitude
+        longitude = location.longitude
+    }
 
+    private fun hasGps(): Boolean =
+        packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,13 +78,21 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
 
+        // Initialize the sensors and location
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
+            Log.d(TAG, "No permission")
+        } else {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locationListener)
+            Log.d(TAG, "Permission granted")
+        }
 
         startButton.setOnClickListener {
             println("Start button pressed" )
@@ -108,7 +127,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f, this)
+
+        val provider = LocationManager.GPS_PROVIDER // or LocationManager.NETWORK_PROVIDER
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(provider, 1000, 1f, this)
+        }
     }
 
     private fun stopRecording() {
@@ -156,21 +179,19 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             // Write the sensor data on the screen
             val sensorData = findViewById<TextView>(R.id.sensorData)
 
-
             val timestamp = System.currentTimeMillis()
             sensorData.setText(
                 "⏱️" + timestamp.toString()
                 + "\n❤️ " + heartRate.toString()
-                + "\n🌍 " + latitude.toString() + " " + longitud.toString()
+                + "\n🌍 " + latitude.toString() + " " + longitude.toString()
                 + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString()
                 + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString()
                 + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
-
             )
             writeDataToCSV(
                 timestamp,
                 latitude,
-                longitud,
+                longitude,
                 heartRate,
                 accelX,
                 accelY,
@@ -216,6 +237,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     override fun onLocationChanged(location: Location) {
         if (isRecording) {
+            latitude = location.latitude
+            longitude = location.longitude
+
             val timestamp = System.currentTimeMillis()
             writeDataToCSV(timestamp, latitude = location.latitude, longitude = location.longitude)
         }
