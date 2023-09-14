@@ -2,7 +2,6 @@ package com.example.smartplay
 
 import android.Manifest
 import android.annotation.SuppressLint
-//import android.app.AlertDialog
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
@@ -28,6 +27,9 @@ import kotlin.math.abs
 import android.util.Log
 
 
+import android.app.AlertDialog
+import android.content.DialogInterface
+import android.view.WindowManager
 
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
@@ -75,6 +77,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         supportActionBar?.hide() // Hide the action bar
 
+        // Keep this activity in focus
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
 
@@ -118,7 +123,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val file = File(dir, "sensor_data.csv")
         try {
             csvWriter = FileWriter(file, true)
-            csvWriter.append("timestamp,latitude,longitude,heartRate,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,magnetoX,magnetoY,magnetoZ\n")
+
+            // If file is empty, write the header columns for the CSV file
+            if (file.length() == 0L){
+                csvWriter.append("timestamp,latitude,longitude,heartRate,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,magnetoX,magnetoY,magnetoZ\n")
+            }
             isRecording = true
         } catch (e: IOException) {
             e.printStackTrace()
@@ -152,7 +161,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         when (event.sensor.type) {
             Sensor.TYPE_HEART_RATE -> {
                 heartRate = event.values[0]
-                writeDataToCSV(timestamp, heartRate = heartRate)
+//                writeDataToCSV(timestamp, heartRate = heartRate)
             }
             Sensor.TYPE_ACCELEROMETER -> {
                 accelX = event.values[0]
@@ -203,9 +212,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 gyroY,
                 gyroZ,
             )
-
             lastUpdateTime = SystemClock.elapsedRealtime()
-
         }
     }
 
@@ -240,8 +247,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             latitude = location.latitude
             longitude = location.longitude
 
-            val timestamp = System.currentTimeMillis()
-            writeDataToCSV(timestamp, latitude = location.latitude, longitude = location.longitude)
+//            val timestamp = System.currentTimeMillis()
+//            writeDataToCSV(timestamp, latitude = location.latitude, longitude = location.longitude)
         }
     }
 
@@ -294,5 +301,27 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
         }
     }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (isRecording) {
+            val builder = AlertDialog.Builder(this)
+            builder.setMessage("Recording in progress. Do you really want to leave?")
+                .setCancelable(false)
+                .setPositiveButton("Yes") { _, _ -> super.onBackPressed() }
+                .setNegativeButton("No", null)
+            val alert = builder.create()
+            alert.show()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+
+
+
+
+
+
 }
 
