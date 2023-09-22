@@ -21,25 +21,21 @@
             android:id="@+id/text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:padding="8pt"
             android:rotationX="26"
             android:rotationY="22"
+
             android:text="⭐️ Smart Play!" />
 
         <!-- Enter Password Button -->
-        <Button
-            android:id="@+id/button_enter_password"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Enter password" />
 
         <!-- Record Button -->
         <Button
             android:id="@+id/button_record"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_gravity="center"
             android:text="Record" />
 
         <!-- Version Text View -->
@@ -47,14 +43,31 @@
             android:id="@+id/version"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="8pt"
-            android:text="Version 0.3" />
+            android:layout_gravity="center"
+            android:text="Version 0.4" />
 
-        <!-- Close App Button -->
+        <!--        align inside elements to the center-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <!-- Close App Button -->
+            <Button
+                android:id="@+id/closeAppButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Close App" />
+
+        </LinearLayout>
+
         <Button
-            android:id="@+id/closeAppButton"
+            android:id="@+id/button_enter_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Close App" />
+            android:layout_gravity="center"
+
+            android:text="Password" />
     </LinearLayout>
 </ScrollView>
