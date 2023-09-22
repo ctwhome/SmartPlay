@@ -41,3 +41,11 @@ adb start-server
 
 ## 🛠️ Building the App with Android Studio
 ![image](https://github.com/ctwhome/SmartPlay/assets/4195550/ff8c7315-226e-464b-80a8-f83cd2692d71)
+
+## Useful commands
+| Description             | Command                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| Connect to a device     | adb connect 192.168.1.64:5555                             |
+| Install app             | adb -s 192.168.1.148:5555 install ./app-debug.apk         |
+| Uninstall app           | adb -s 192.168.1.148:5555 uninstall com.example.smartplay |
+| List installed packages | adb -s 192.168.1.148:5555 shell pm list packages          |
