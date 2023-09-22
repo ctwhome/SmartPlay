@@ -25,5 +25,14 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, RecordingActivity::class.java)
             startActivity(intent)
         }
+
+
+        // Find the close app button by its ID
+        val closeAppButton: Button = findViewById(R.id.closeAppButton)
+        // Set a click listener for the button
+        closeAppButton.setOnClickListener {
+            // Close the app
+            finish()
+        }
     }
 }
