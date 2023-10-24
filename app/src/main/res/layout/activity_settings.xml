@@ -22,40 +22,6 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Start:" />
-
-                <TimePicker
-                    android:id="@+id/stop_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:timePickerMode="spinner" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Stop:" />
-
-                <TimePicker
-                    android:id="@+id/start_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:timePickerMode="spinner" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:text="ID:" />
 
                 <EditText
@@ -65,7 +31,129 @@
                     android:inputType="number" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/workflow_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Workflow" />
+
+            <Spinner
+                android:id="@+id/mySpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/sensorDataText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sensor Data" />
+
+            <CheckBox
+                android:id="@+id/checkBoxHeartRate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Heart Rate" />
+            <CheckBox
+                android:id="@+id/checkBoxAccelerometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Accelerometer" />
+            <CheckBox
+                android:id="@+id/checkBoxGyroscope"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Gyroscope" />
+            <CheckBox
+                android:id="@+id/checkBoxMagnetometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Magnetometer" />
+            <CheckBox
+                android:id="@+id/checkBoxLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Location" />
+
+
+            <!-- Frequency of data recording -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Frequency in ms:" />
+
+                <EditText
+                    android:id="@+id/id_input_frequency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:hint="1000"/>
+            </LinearLayout>
+
+            <!-- Record Button -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Record" />
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Start:" />-->
+
+<!--                <TimePicker-->
+<!--                    android:id="@+id/stop_time"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:timePickerMode="spinner" />-->
+<!--            </LinearLayout>-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Stop:" />-->
+
+<!--                <TimePicker-->
+<!--                    android:id="@+id/start_time"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:timePickerMode="spinner" />-->
+<!--            </LinearLayout>-->
+
+
+
         </LinearLayout>
     </ScrollView>
+
+
 
 </LinearLayout>

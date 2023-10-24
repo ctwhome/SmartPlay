@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
 
         val buttonOpenSecondActivity: Button = findViewById(R.id.button_enter_password)
         buttonOpenSecondActivity.setOnClickListener {
-            val intent = Intent(this@MainActivity, PasswordActivity::class.java)
+            val intent = Intent(this@MainActivity, SettingsActivity::class.java)
             startActivity(intent)
         }
 

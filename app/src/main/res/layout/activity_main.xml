@@ -30,13 +30,13 @@
 
         <!-- Enter Password Button -->
 
-        <!-- Record Button -->
         <Button
-            android:id="@+id/button_record"
+            android:id="@+id/button_enter_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Record" />
+
+            android:text="Start" />
 
         <!-- Version Text View -->
         <TextView
@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Version 0.4" />
+            android:text="Version 0.5" />
 
         <!--        align inside elements to the center-->
         <LinearLayout
@@ -53,6 +53,13 @@
             android:gravity="center"
             android:orientation="horizontal">
 
+        <!-- Record Button -->
+        <Button
+            android:id="@+id/button_record"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Record" />
             <!-- Close App Button -->
             <Button
                 android:id="@+id/closeAppButton"
@@ -62,12 +69,5 @@
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/button_enter_password"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-
-            android:text="Password" />
     </LinearLayout>
 </ScrollView>

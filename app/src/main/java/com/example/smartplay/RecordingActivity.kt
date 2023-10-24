@@ -26,6 +26,8 @@ import java.io.IOException
 import kotlin.math.abs
 import android.util.Log
 
+import android.provider.Settings
+
 
 import android.app.AlertDialog
 import android.content.DialogInterface
@@ -117,10 +119,25 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
+    fun getWatchId(context: Context): String {
+        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+    }
     private fun startRecording() {
         checkPermission()
+
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val childId = sharedPref.getString("idChild", "000")
+
+//      val childId = "001"
+        // Getting data from the setting page
+//        val childId = intent.getStringExtra("idChild")
+        // console log childId
+        println("childId: $childId")
+
+        val timestamp = System.currentTimeMillis()
+        val watchId = getWatchId(this)
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        val file = File(dir, "sensor_data.csv")
+        val file = File(dir, childId + "_" + watchId + "_" + timestamp + ".csv")
         try {
             csvWriter = FileWriter(file, true)
 
