@@ -1,10 +1,13 @@
 package com.example.smartplay
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
@@ -13,7 +16,24 @@ import android.widget.EditText
 import android.widget.Spinner
 //import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
+
+data class Workflow(
+    val workflow_name: String,
+    val questions: List<Question>
+)
+
+data class Question(
+    val question_id: Int,
+    val question_title: String,
+    val answers: List<String>,
+    val time_after_start_in_minutes: Any,  // This can be String or Int based on the example
+    val frequency: Int? = null,
+    val frequency_in_minutes: Int? = null
+)
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.hide() // Hide the action bar
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
+        readFileFromSDCard()
         // Button Record
         val buttonRecordingActivity: Button = findViewById(R.id.button_record)
         buttonRecordingActivity.setOnClickListener {
@@ -50,7 +71,7 @@ class SettingsActivity : AppCompatActivity() {
         // Initialize the spinner (select)
         val spinnerWorkflow: Spinner = findViewById(R.id.mySpinner)
         // Create an ArrayAdapter using a simple spinner layout and your data
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, getSpinnerData())
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, getWorkflowList())
         // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
@@ -66,7 +87,6 @@ class SettingsActivity : AppCompatActivity() {
         checkBoxHeartRate.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxHeartRate", isChecked.toString())
         }
-
         val checkBoxAccelerometer: CheckBox = findViewById(R.id.checkBoxAccelerometer)
         checkBoxAccelerometer.isChecked = sharedPref.getString("checkBoxAccelerometer", "true").toBoolean()
         checkBoxAccelerometer.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
@@ -88,7 +108,6 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences("checkBoxLocation", isChecked.toString())
         }
 
-
         //
         // Frequency button
         //
@@ -107,17 +126,16 @@ class SettingsActivity : AppCompatActivity() {
 
 
 
-
     }
-
+    //
     // Function to get data for the Workflow spinner
-    private fun getSpinnerData(): List<String> {
-        // You can replace this list with any data source you like
-        return listOf("Choice 1", "Choice 2", "Choice 3", "Choice 4")
+    //
+    private fun getWorkflowList(): List<String> {
+        // read values from the JSON files
+        //  return listOf("Choice 1", "Choice 2", "Choice 3", "Choice 4")
+        return readFileFromSDCard()
     }
 
-    // Save values to SharedPreferences
-    // input value string number or boolean
 
     private fun saveToSharedPreferences(keyName: String, inputValue: String) {
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
@@ -125,6 +143,25 @@ class SettingsActivity : AppCompatActivity() {
             putString(keyName, inputValue)
             apply()
         }
+    }
+
+    // read workflow from JSON file
+
+    private fun readFileFromSDCard(): List<String> {
+        val path = Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflow/workflow.json"
+        Log.d(TAG, "Path: $path")
+        return getWorkflowNamesFromJSON(path)
+    }
+
+
+    private fun getWorkflowNamesFromJSON(path: String): List<String> {
+        val jsonContent = File(path).readText()
+
+        val gson = Gson()
+        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
+        val workflows: List<Workflow> = gson.fromJson(jsonContent, workflowListType)
+
+        return workflows.map { it.workflow_name }
     }
 }
 

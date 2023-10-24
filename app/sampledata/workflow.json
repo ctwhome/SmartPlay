@@ -1,0 +1,50 @@
+[
+  {
+    "workflow_name":"Workflow 1",
+    "questions":[
+      {
+        "question_id":1,
+        "question_title":"How do you feel?",
+        "answers":[
+          "👍",
+          "🤢",
+          "🤷‍♀️"
+        ],
+        "time_after_start_in_minutes":"10",
+        "frequency":1
+      },
+      {
+        "question_id":2,
+        "question_title":"Energy level?",
+        "answers":[
+          "🔋",
+          "🪫"
+        ],
+        "time_after_start_in_minutes":2,
+        "frequency_in_minutes":5
+      },
+      {
+        "question_id":3,
+        "question_title":"Feeling alone?",
+        "answers":[
+          "😭",
+          "🥳"
+        ],
+        "time_after_start_in_minutes":5,
+        "frequency_in_minutes":20
+      }
+    ]
+  },
+  {
+    "workflow_name":"Workflow 2",
+    "questions":[
+
+    ]
+  },
+  {
+    "workflow_name":"Workflow 3",
+    "questions":[
+
+    ]
+  }
+]
