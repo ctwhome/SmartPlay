@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Version 0.5" />
+            android:text="V 0.6 - 06-02-2024" />
 
         <!--        align inside elements to the center-->
         <LinearLayout
