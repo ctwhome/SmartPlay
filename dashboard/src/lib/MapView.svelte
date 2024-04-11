@@ -11,7 +11,7 @@
 	const apiKey = 'qjyUv6NFtgF6poQcVJlE';
 
 	onMount(() => {
-		console.log('🎹 gps data', gpsData);
+		// console.log('🎹 gps data', gpsData);
 
 		const initialState = { lng: 139.753, lat: 35.6844, zoom: 14 };
 
@@ -28,7 +28,7 @@
 	});
 </script>
 
-<div class="map-wrap">
+<div class="h-full w-full">
 	<a href="https://www.maptiler.com" class="watermark"
 		><img src="https://api.maptiler.com/resources/logo.svg" alt="MapTiler logo" /></a
 	>

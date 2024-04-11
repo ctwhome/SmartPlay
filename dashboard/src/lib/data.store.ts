@@ -24,14 +24,14 @@ type Person = {
   data: Data[];
 };
 
-
-export const data = writable<Person[]>([]);
+// List of persons
+export const personsList = writable<Person[]>([]);
 export const selectedPerson = writable<Person | null>(null);
 
 // get gps data from a specific person
 export function selectPerson(id: number) {
 
-  const person = get(data).find((person) => person.id === id);
+  const person = get(personsList).find((person) => person.id === id);
   if (person) {
     selectedPerson.set(person);
   }

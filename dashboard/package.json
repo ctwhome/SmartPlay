@@ -34,6 +34,8 @@
 		"@sveltejs/adapter-static": "^3.0.1",
 		"chart.js": "^4.4.1",
 		"d3": "^7.8.5",
+		"geojson": "^0.5.0",
+		"just-flush": "^2.3.0",
 		"leaflet": "^1.9.4",
 		"maplibre-gl": "^4.0.0",
 		"papaparse": "^5.4.1",

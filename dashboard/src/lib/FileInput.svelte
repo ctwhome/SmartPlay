@@ -3,7 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import Papa from 'papaparse';
 
-	import { data } from '$lib/data.store';
+	import { personsList } from '$lib/data.store';
 
 	let isDragging = false;
 
@@ -39,11 +39,11 @@
 				Papa.parse(file, {
 					header: true,
 					complete: (result) => {
-						console.log('Parsed data:', file.name, result);
+						// console.log('Parsed data:', file.name, result);
 
 						// add result.data to the store data array
-						data.update((d) => [
-							...d,
+						personsList.update((data) => [
+							...data,
 							{
 								id: parsedInfo.id,
 								deviceId: parsedInfo.deviceId,

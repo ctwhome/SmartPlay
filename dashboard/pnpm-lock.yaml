@@ -14,6 +14,12 @@ dependencies:
   d3:
     specifier: ^7.8.5
     version: 7.8.5
+  geojson:
+    specifier: ^0.5.0
+    version: 0.5.0
+  just-flush:
+    specifier: ^2.3.0
+    version: 2.3.0
   leaflet:
     specifier: ^1.9.4
     version: 1.9.4
@@ -1602,6 +1608,11 @@ packages:
 
   /geojson-vt@3.2.1:
     resolution: {integrity: sha512-EvGQQi/zPrDA6zr6BnJD/YhwAkBP8nnJ9emh3EnHQKVMfg/MRVtPbMYdgVy/IaEmn4UfagD2a6fafPDL5hbtwg==}
+    dev: false
+
+  /geojson@0.5.0:
+    resolution: {integrity: sha512-/Bx5lEn+qRF4TfQ5aLu6NH+UKtvIv7Lhc487y/c8BdludrCTpiWf9wyI0RTyqg49MFefIAvFDuEi5Dfd/zgNxQ==}
+    engines: {node: '>= 0.10'}
     dev: false
 
   /get-stream@6.0.1:
