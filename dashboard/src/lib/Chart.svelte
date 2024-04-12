@@ -2,7 +2,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import Chart from 'chart.js/auto';
 
-	export type Data = {
+	type Data = {
 		labels: string[];
 		datasets: {
 			label: string;
@@ -22,23 +22,7 @@
 		| 'scatter';
 
 	export let chartType: ChartType = 'line';
-	export let data: Data = {
-		labels: ['Timestamp1', 'Timestamp2', 'Timestamp3'], // Replace with actual timestamps
-		datasets: [
-			{
-				label: 'Accel X',
-				backgroundColor: 'rgb(255, 99, 132)',
-				borderColor: 'rgb(255, 99, 132)',
-				data: [-0.44771573, -0.38307226, -1.0366893] // Replace with actual accelX data points
-			},
-			{
-				label: 'Accel Y',
-				backgroundColor: '#ff3',
-				borderColor: '#ff3',
-				data: [-1.44771573, -1.38307226, -20366893] // Replace with actual accelX data points
-			}
-		]
-	};
+	export let data: Data;
 	export let options: any = {
 		scales: {
 			y: {
@@ -50,15 +34,10 @@
 	let chartInstance: Chart | null = null;
 	let canvas: HTMLCanvasElement;
 
-	// Reactive block to react on chartType changes
-	$: {
+	function createChart() {
 		if (chartInstance) {
 			chartInstance.destroy();
-			createChart();
 		}
-	}
-
-	function createChart() {
 		const ctx = canvas.getContext('2d');
 		chartInstance = new Chart(ctx, {
 			type: chartType,
@@ -68,17 +47,26 @@
 	}
 
 	onMount(() => {
+		console.log('🎹 mounted');
 		createChart();
 	});
 
 	onDestroy(() => {
+		console.log('🎹 destroy');
 		if (chartInstance) {
 			chartInstance.destroy();
 		}
 	});
+
+	// Reactively update the chart when chartType changes
+	$: if (chartInstance) {
+		console.log('🎹 chart type changed to', chartType);
+		createChart();
+	}
 </script>
 
 <div class="w-full aspect-video">
+	{chartType}
 	<!-- radio button to change type -->
 	<div class="flex space-x-4">
 		<label>
