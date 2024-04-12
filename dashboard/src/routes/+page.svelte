@@ -1,47 +1,65 @@
 <script lang="ts">
 	import FileInput from '$lib/FileInput.svelte';
 	import Map from '$lib/Map.svelte';
+	import { format, fromUnixTime, getMinutes } from 'date-fns';
 	// Import other chart components
-	import { personsList, selectPerson, selectedPerson } from '$lib/data.store';
+	import { personsList, selectedPerson } from '$lib/data.store';
 	import dataExample from '$lib/dataExample.json';
+	import dataExample2 from '$lib/dataExample2.json';
 
 	import { onMount } from 'svelte';
 	import Chart from '$lib/Chart.svelte';
 
-	function handleFileParsed(event) {
-		const data = event.detail;
-		// Populate gpsData, heartRateData, etc., based on the CSV structure
-	}
-	// }
-	// $: console.log(selectedData);
 	let labels = [];
-	$: {
-		if ($selectedPerson) {
-			$selectedPerson.data &&
-				(labels = $selectedPerson.data.map((d) => {
-					return new Date(d.timestamp * 1000).toLocaleTimeString('en-US', {
-						hour: '2-digit',
-						minute: '2-digit',
-						hour12: false
-					});
-				}));
+	let fromTimeToTime = '';
+	let duration = '';
+	$: if ($selectedPerson && $selectedPerson.data) {
+		// the the time of the first and last data point
+		fromTimeToTime = `${format(fromUnixTime($selectedPerson.data[0].timestamp / 1000), 'HH:mm:ss')} - ${format(fromUnixTime($selectedPerson.data[$selectedPerson.data.length - 1].timestamp / 1000), 'HH:mm:ss')}`;
+		// calculate the duration of the data in munites and seconds
+		duration = `${getMinutes($selectedPerson.data[$selectedPerson.data.length - 1].timestamp - $selectedPerson.data[0].timestamp)} minutes`;
+
+		labels = $selectedPerson.data.map(
+			(d) => format(fromUnixTime(d.timestamp / 1000), 'HH:mm:ss')
+
+			// new Date(d.timestamp * 100).toLocaleTimeString('nl-NL', {
+			// 	hour: '2-digit',
+			// 	minute: '2-digit',
+			// 	hour12: false
+			// })
+		);
+	}
+
+	function selectPerson(id: number) {
+		const person = $personsList.find((p) => p.id === id);
+		if (person) {
+			$selectedPerson = person;
 		}
 	}
 
 	onMount(() => {
-		// data example
 		personsList.update((d) => [...d, dataExample]);
+		personsList.update((d) => [...d, dataExample2]);
 		selectPerson(dataExample.id);
 	});
+
+	$: if ($selectedPerson) {
+		// Refresh the charts by creating a function that recreates data objects for charts
+		refreshCharts();
+	}
+
+	function refreshCharts() {
+		// Logic to update chart data
+		console.log('Data for charts refreshed for', $selectedPerson.id);
+	}
 </script>
 
 <!-- <MapView /> -->
 
-<div class="grid w-full gap-4 grid-cols-[auto_1fr] p-4">
+<div class="grid w-full gap-4 grid-cols-[auto_1fr] p-4 container mx-auto">
 	<div class="">
-		<h1 class="text-4xl font-bold">SmartPlay</h1>
-		<!-- for each person in $data -->
-		<!-- <pre>{JSON.stringify($data, null, 2)}</pre> -->
+		<h1 class="text-4xl font-bold mb-10">SmartPlay</h1>
+
 		<!-- LIST OF DROPPED PERSONS -->
 		{#each $personsList as person}
 			<div>
@@ -59,14 +77,20 @@
 				>
 			</div>
 		{/each}
+
+		<!-- FILE INPUT -->
 		<div class="p-10">
-			<FileInput on:fileParsed={handleFileParsed} />
+			<FileInput />
 		</div>
 	</div>
 
 	<div class="">
+		<!-- <pre>{JSON.stringify($selectedPerson, null, 2)}</pre> -->
+
 		{#if $selectedPerson}
-			Number of data points: {$selectedPerson.data.length}
+			<div class="mb-4">
+				Number of data points: {$selectedPerson.data.length} - duration: {duration} ({fromTimeToTime})
+			</div>
 
 			<div class="grid grid-cols-1">
 				<!-- All -->
@@ -91,13 +115,15 @@
 								label: 'Gyro Y',
 								backgroundColor: '#0077b6',
 								borderColor: '#0077b6',
-								data: $selectedPerson.data.map((d) => d.gyroY)
+								data: $selectedPerson.data.map((d) => d.gyroY),
+								hidden: true
 							},
 							{
 								label: 'Gyro Z',
 								backgroundColor: '#457b9d',
 								borderColor: '#457b9d',
-								data: $selectedPerson.data.map((d) => d.gyroZ)
+								data: $selectedPerson.data.map((d) => d.gyroZ),
+								hidden: true
 							},
 							{
 								label: 'Accel X',
@@ -109,13 +135,15 @@
 								label: 'Accel Y',
 								backgroundColor: '#e7c6ff',
 								borderColor: '#e7c6ff',
-								data: $selectedPerson.data.map((d) => d.accelY)
+								data: $selectedPerson.data.map((d) => d.accelY),
+								hidden: true
 							},
 							{
 								label: 'Accel Z',
 								backgroundColor: '#a38cc6',
 								borderColor: '#a38cc6',
-								data: $selectedPerson.data.map((d) => d.accelZ)
+								data: $selectedPerson.data.map((d) => d.accelZ),
+								hidden: true
 							},
 							{
 								label: 'Magneto X',
@@ -127,21 +155,19 @@
 								label: 'Magneto Y',
 								backgroundColor: '#588157',
 								borderColor: '#588157',
-								data: $selectedPerson.data.map((d) => d.magnetoY)
+								data: $selectedPerson.data.map((d) => d.magnetoY),
+								hidden: true
 							},
 							{
 								label: 'Magneto Z',
 								backgroundColor: '#3a5a40',
 								borderColor: '#3a5a40',
-								data: $selectedPerson.data.map((d) => d.magnetoZ)
+								data: $selectedPerson.data.map((d) => d.magnetoZ),
+								hidden: true
 							}
 						]
 					}}
 				/>
-			</div>
-
-			<div class="h-[550px]">
-				<Map />
 			</div>
 
 			<div class="grid gap-10 grid-cols-2">
@@ -162,20 +188,20 @@
 				/>
 				<!-- Accelerometer -->
 				<Chart
-					chartType="line"
+					chartType="radar"
 					data={{
 						labels,
 						datasets: [
 							{
 								label: 'Accel X',
-								backgroundColor: 'blue',
-								borderColor: 'blue',
+								backgroundColor: 'rgba(22, 99, 33,0.4)',
+								borderColor: 'rgba(22, 99, 33,0.4)',
 								data: $selectedPerson.data.map((d) => d.accelX)
 							},
 							{
 								label: 'Accel Y',
-								backgroundColor: '#ff3',
-								borderColor: '#ff3',
+								backgroundColor: 'rgba(22, 99, 132,0.4)',
+								borderColor: 'rgba(22, 99, 132,0.4)',
 								data: $selectedPerson.data.map((d) => d.accelY)
 							},
 							{
@@ -245,6 +271,9 @@
 				/>
 			</div>
 			<!-- <MapView gpsData={$selectedPerson} /> -->
+			<div class="h-[300px]">
+				<Map />
+			</div>
 		{/if}
 	</div>
 </div>
