@@ -37,39 +37,29 @@
 	};
 </script>
 
-<div class="h-[300px] w-full">
-	<div class="h-[300px] w-full">
-		<MapLibre
-			style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
-			class="relative w-full h-[500px] "
-			standardControls
-			center={[-68.137, 45.137]}
-			zoom={5}
-			hash
-		>
-			<GeoJSON id="maine" {data}>
-				<LineLayer
-					layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-					paint={{
-						'line-width': 5,
-						'line-dasharray': [5, 2],
-						'line-color': '#008800',
-						'line-opacity': 0.8
-					}}
-				/>
-			</GeoJSON>
-		</MapLibre>
-	</div>
-
-	<style>
-		:global(.map) {
-			height: 500px;
-		}
-	</style>
-</div>
+<MapLibre
+	style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+	class="relative w-full h-full"
+	standardControls
+	center={[-68.137, 45.137]}
+	zoom={5}
+	hash
+>
+	<GeoJSON id="maine" {data}>
+		<LineLayer
+			layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+			paint={{
+				'line-width': 5,
+				'line-dasharray': [5, 2],
+				'line-color': '#008800',
+				'line-opacity': 0.8
+			}}
+		/>
+	</GeoJSON>
+</MapLibre>
 
 <style>
 	:global(.map) {
-		height: 500px;
+		height: 100% !important;
 	}
 </style>

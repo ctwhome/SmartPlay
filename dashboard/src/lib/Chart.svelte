@@ -35,9 +35,13 @@
 	let canvas: HTMLCanvasElement;
 
 	function createChart() {
+		if (!canvas) {
+			return;
+		}
 		if (chartInstance) {
 			chartInstance.destroy();
 		}
+
 		const ctx = canvas.getContext('2d');
 		chartInstance = new Chart(ctx, {
 			type: chartType,
@@ -58,6 +62,10 @@
 		}
 	});
 
+	$: if (data) {
+		console.log('🎹 chart type changed to', chartType);
+		createChart();
+	}
 	// Reactively update the chart when chartType changes
 	$: if (chartInstance) {
 		console.log('🎹 chart type changed to', chartType);
@@ -66,7 +74,6 @@
 </script>
 
 <div class="w-full aspect-video">
-	{chartType}
 	<!-- radio button to change type -->
 	<div class="flex space-x-4">
 		<label>
