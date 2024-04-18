@@ -8,6 +8,8 @@ import android.os.Environment
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
@@ -64,6 +66,25 @@ class SettingsActivity : AppCompatActivity() {
             }
         })
 
+        //
+        // Frequency button
+        //
+        // Initialize the EditText
+        val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
+        // To set a value to the EditText from the SharedPreferences or a default value of 1000
+        frequencyRate.setText(sharedPref.getString("frequencyRate", "3000"))
+        frequencyRate.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
+            override fun afterTextChanged(s: Editable?) {
+                // Save the new value to SharedPreferences when the input changes
+                saveToSharedPreferences("frequencyRate",s.toString())
+            }
+        })
+
+        // Set focus change listeners for the EditTexts, to close keyboard after losing focus
+        setupFocusChangeListener(idInput)
+        setupFocusChangeListener(frequencyRate)
 
         //
         // Workflow
@@ -108,25 +129,26 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences("checkBoxLocation", isChecked.toString())
         }
 
-        //
-        // Frequency button
-        //
-        // Initialize the EditText
-        val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
-        // To set a value to the EditText from the SharedPreferences or a default value of 1000
-        frequencyRate.setText(sharedPref.getString("frequencyRate", "3000"))
-        frequencyRate.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
-            override fun afterTextChanged(s: Editable?) {
-                // Save the new value to SharedPreferences when the input changes
-                saveToSharedPreferences("frequencyRate",s.toString())
-            }
-        })
+
 
 
 
     }
+
+
+    private fun setupFocusChangeListener(editText: EditText) {
+        editText.setOnFocusChangeListener { view, hasFocus ->
+            if (!hasFocus) {
+                hideKeyboard(view)
+            }
+        }
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
     //
     // Function to get data for the Workflow spinner
     //
@@ -145,13 +167,42 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    // read workflow from JSON file
+    // Read workflow from JSON file (Original Function)
+        private fun readFileFromSDCard(): List<String> {
+            val path = Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflow/workflow.json"
+            Log.d(TAG, "Path: $path")
+        // log the file content
+        Log.d(TAG, "File content: ${
+            try {
+                File(path).readText()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error reading workflow file: ${e.message}")
+                ""
+            }
+        }")
 
-    private fun readFileFromSDCard(): List<String> {
-        val path = Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflow/workflow.json"
+            return getWorkflowNamesFromJSON(path)
+        }
+
+
+   /* private fun readFileFromSDCard(): List<String> {
+        // Update the path to use getExternalFilesDir for better practice and to avoid hardcoding paths
+        val externalFilesDir = getExternalFilesDir(null)?.path ?: return emptyList() // null-safety check
+        val path = "$externalFilesDir/workflow/workflow.json"
+
         Log.d(TAG, "Path: $path")
-        return getWorkflowNamesFromJSON(path)
-    }
+
+        return try {
+            val jsonContent = File(path).readText()
+            val gson = Gson()
+            val workflowListType = object : TypeToken<List<Workflow>>() {}.type
+            val workflows: List<Workflow> = gson.fromJson(jsonContent, workflowListType)
+            workflows.map { it.workflow_name }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reading workflow file: ${e.message}")
+            emptyList()
+        }
+    }*/
 
 
     private fun getWorkflowNamesFromJSON(path: String): List<String> {
