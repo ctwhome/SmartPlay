@@ -23,7 +23,7 @@ jobs:
 
       - name: Build
         env:
-          BASE_PATH: '/dashboard'
+          BASE_PATH: '/smartplay/dashboard'
         run: pnpm run build
         working-directory: dashboard
 
