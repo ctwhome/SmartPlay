@@ -23,7 +23,7 @@ jobs:
 
       - name: Build
         env:
-          BASE_PATH: '/${{ github.event.repository.name }}/dashboard'
+          BASE_PATH: '/dashboard'
         run: pnpm run build
         working-directory: dashboard
 
