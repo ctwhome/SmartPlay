@@ -15,7 +15,7 @@ const config = {
 			fallback: '404.html' // may differ from host to host
 		}),
 		paths: {
-			base: process.argv.includes('dev') ? '' : '/SmartPlay/dashboard'
+			base: process.argv.includes('dev') ? '' : '/SmartPlay'
 		}
 	}
 };
