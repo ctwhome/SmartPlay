@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp"
     tools:context=".SettingsActivity">
 
@@ -22,12 +23,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ID:" />
+                    android:text="User ID:" />
 
                 <EditText
                     android:id="@+id/id_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="001"
                     android:inputType="number" />
             </LinearLayout>
 
@@ -40,7 +42,7 @@
             <Spinner
                 android:id="@+id/mySpinner"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -60,6 +62,13 @@
                     android:inputType="number" />
             </LinearLayout>
 
+            <Button
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Start recording" />
+
             <TextView
                 android:id="@+id/sensorDataText"
                 android:layout_width="match_parent"
@@ -73,6 +82,7 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="Heart Rate" />
+
             <CheckBox
                 android:id="@+id/checkBoxAccelerometer"
                 android:layout_width="wrap_content"
@@ -80,6 +90,7 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="Accelerometer" />
+
             <CheckBox
                 android:id="@+id/checkBoxGyroscope"
                 android:layout_width="wrap_content"
@@ -87,6 +98,7 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="Gyroscope" />
+
             <CheckBox
                 android:id="@+id/checkBoxMagnetometer"
                 android:layout_width="wrap_content"
@@ -94,6 +106,7 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="Magnetometer" />
+
             <CheckBox
                 android:id="@+id/checkBoxLocation"
                 android:layout_width="wrap_content"
@@ -102,6 +115,82 @@
                 android:checked="true"
                 android:text="Location" />
 
+            <CheckBox
+                android:id="@+id/checkBoxSpO2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:duplicateParentState="true"
+                android:text="Pulse Oximeter (SpO2)" />
+
+            <CheckBox
+                android:id="@+id/checkBoxHRV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:duplicateParentState="true"
+                android:text="Heart Rate Variability (HRV)" />
+
+            <CheckBox
+                android:id="@+id/checkBoxECG"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:duplicateParentState="true"
+                android:text="Electrocardiogram (ECG)" />
+
+            <!-- skin temperature-->
+            <CheckBox
+                android:id="@+id/checkBoxSkinTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:text="Skin Temperature" />
+
+            <!-- Ambient temperature-->
+            <CheckBox
+                android:id="@+id/checkBoxAmbientTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:text="Ambient Temperature" />
+
+            <!-- Ambient Light-->
+            <CheckBox
+                android:id="@+id/checkBoxAmbientLight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:text="Ambient Light" />
+
+            <!-- Barometer-->
+            <CheckBox
+                android:id="@+id/checkBoxBarometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0.4"
+                android:checked="false"
+                android:clickable="false"
+                android:text="Barometer" />
 
             <!-- Frequency of data recording -->
 
@@ -110,51 +199,43 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-            <Button
-                android:id="@+id/button_record"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Record" />
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:orientation="horizontal">-->
+            <!--            <LinearLayout-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="match_parent"-->
+            <!--                android:orientation="horizontal">-->
 
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="Start:" />-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:text="Start:" />-->
 
-<!--                <TimePicker-->
-<!--                    android:id="@+id/stop_time"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:timePickerMode="spinner" />-->
-<!--            </LinearLayout>-->
+            <!--                <TimePicker-->
+            <!--                    android:id="@+id/stop_time"-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:timePickerMode="spinner" />-->
+            <!--            </LinearLayout>-->
 
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:orientation="horizontal">-->
+            <!--            <LinearLayout-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="match_parent"-->
+            <!--                android:orientation="horizontal">-->
 
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="Stop:" />-->
+            <!--                <TextView-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:text="Stop:" />-->
 
-<!--                <TimePicker-->
-<!--                    android:id="@+id/start_time"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:timePickerMode="spinner" />-->
-<!--            </LinearLayout>-->
-
+            <!--                <TimePicker-->
+            <!--                    android:id="@+id/start_time"-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:timePickerMode="spinner" />-->
+            <!--            </LinearLayout>-->
 
 
         </LinearLayout>
     </ScrollView>
-
 
 
 </LinearLayout>
