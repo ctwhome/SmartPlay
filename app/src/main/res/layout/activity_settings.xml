@@ -73,7 +73,7 @@
                 android:id="@+id/sensorDataText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sensor Data" />
+                android:text="Include sensor data" />
 
             <CheckBox
                 android:id="@+id/checkBoxHeartRate"
@@ -114,6 +114,14 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="Location" />
+
+            <CheckBox
+                android:id="@+id/checkBoxBluetoothProximity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="false"
+                android:text="Bluetooth Proximity (WIP)" />
 
             <CheckBox
                 android:id="@+id/checkBoxSpO2"

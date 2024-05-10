@@ -32,6 +32,8 @@ import android.provider.Settings
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.view.WindowManager
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
@@ -79,6 +81,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         supportActionBar?.hide() // Hide the action bar
 
+
         // Keep this activity in focus
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -93,16 +96,23 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0
+            )
             Log.d(TAG, "No permission")
         } else {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locationListener)
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER, 0L, 0f, locationListener
+            )
             Log.d(TAG, "Permission granted")
         }
 
         startButton.setOnClickListener {
-            println("Start button pressed" )
+            println("Start button pressed")
             if (!isRecording) {
                 startButton.visibility = Button.GONE
                 stopButton.visibility = Button.VISIBLE
@@ -117,11 +127,63 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 stopRecording()
             }
         }
+
+    }
+
+    //
+    // Function to initialize the workflow questions
+    //
+    private fun initWorkflowQuestions() {
+        val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
+        val workflowString = sharedData.getString("workflowFile", "")
+        // cast the json file to a Workflow object
+
+        val gson = Gson()
+        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
+        val workflows: List<Workflow> = gson.fromJson(workflowString, workflowListType)
+        val selectedWorkflowName = sharedData.getString("selectedWorkflow", "NOT_FOUND")
+
+        Log.d(TAG, "Selected Workflow Name: $selectedWorkflowName")
+
+        val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
+        // parse the json file workflowFile
+
+        Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
+
+        val questions = workflow[0].questions.map {
+            Log.d(TAG, "Question: ${it.question_title}")
+            if (it.time_after_start_in_minutes != null) {
+                Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
+            Thread {
+
+                //
+                // !CONTINUE HERE
+                // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
+                // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
+                //
+
+//                Thread.sleep(it.time_after_start_in_minutes.toLong() * 60 * 1000) // multiply by 60 to convert to minutes
+                Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
+                Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
+
+
+                // Ensure UI updates are done on the Main Thread
+                runOnUiThread {
+                showMessageDialog(this, it.question_title, it.answers)
+                }
+
+            }.start()
+            }
+        }
+
+
     }
 
     fun getWatchId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
+
     private fun startRecording() {
         checkPermission()
 
@@ -142,7 +204,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             csvWriter = FileWriter(file, true)
 
             // If file is empty, write the header columns for the CSV file
-            if (file.length() == 0L){
+            if (file.length() == 0L) {
                 csvWriter.append("timestamp,latitude,longitude,heartRate,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,magnetoX,magnetoY,magnetoZ\n")
             }
             isRecording = true
@@ -155,9 +217,17 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         val provider = LocationManager.GPS_PROVIDER // or LocationManager.NETWORK_PROVIDER
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             locationManager.requestLocationUpdates(provider, 1000, 1f, this)
         }
+
+
+        // Initialize the workflow questions
+        initWorkflowQuestions()
+
     }
 
     private fun stopRecording() {
@@ -180,18 +250,21 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 heartRate = event.values[0]
 //                writeDataToCSV(timestamp, heartRate = heartRate)
             }
+
             Sensor.TYPE_ACCELEROMETER -> {
                 accelX = event.values[0]
                 accelY = event.values[1]
                 accelZ = event.values[2]
 //                writeDataToCSV(timestamp, accelX = x, accelY = y, accelZ = z)
             }
+
             Sensor.TYPE_GYROSCOPE -> {
                 gyroX = event.values[0]
                 gyroY = event.values[1]
                 gyroZ = event.values[2]
 //                writeDataToCSV(timestamp, gyroX = x, gyroY = y, gyroZ = z)
             }
+
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 magnetoX = event.values[0]
                 magnetoY = event.values[1]
@@ -207,12 +280,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
             val timestamp = System.currentTimeMillis()
             sensorData.setText(
-                "⏱️" + timestamp.toString()
-                + "\n❤️ " + heartRate.toString()
-                + "\n🌍 " + latitude.toString() + " " + longitude.toString()
-                + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString()
-                + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString()
-                + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
+                "⏱️" + timestamp.toString() + "\n❤️ " + heartRate.toString() + "\n🌍 " + latitude.toString() + " " + longitude.toString() + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString() + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString() + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
             )
             writeDataToCSV(
                 timestamp,
@@ -271,36 +339,28 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private fun checkPermission() {
         if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                this, Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED ||
 
             ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BODY_SENSORS
+                this, Manifest.permission.BODY_SENSORS
             ) != PackageManager.PERMISSION_GRANTED ||
 
             ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
 
         ) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.BODY_SENSORS
-                ),
-                0
+                this, arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BODY_SENSORS
+                ), 0
             )
         }
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -313,6 +373,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 }
                 return
             }
+
             else -> {
                 // Ignore all other requests.
             }
@@ -324,8 +385,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         if (isRecording) {
             val builder = AlertDialog.Builder(this)
             builder.setMessage("Recording in progress. Do you really want to leave?")
-                .setCancelable(false)
-                .setPositiveButton("Yes") { _, _ -> super.onBackPressed() }
+                .setCancelable(false).setPositiveButton("Yes") { _, _ -> super.onBackPressed() }
                 .setNegativeButton("No", null)
             val alert = builder.create()
             alert.show()
@@ -335,10 +395,59 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     }
 
 
+    // Dialog for the notifications messages, but get the
+    fun showMessageDialog(context: Context, question: String, answers: List<String>) {
+        // Check and log if the answers are empty
+        if (answers.isEmpty()) {
+            Log.d(TAG, "No answers provided to the dialog")
+            return
+        }
+
+        // Logging answers to debug them
+        Log.d(TAG, "Answers: $answers")
+
+        // Creating an AlertDialog builder
+        val builder = AlertDialog.Builder(context)
+
+        // Set the title of the dialog to the question
+        builder.setTitle(question)
+
+        // Optional: Remove this setMessage if you want only the list visible
+        // builder.setMessage("Select an answer")
 
 
+        // MAKE A CUSTOM LAYOUT TO DISPLAY THE QUESTIONS
 
 
+        // Use setSingleChoiceItems for a list of selectable items
+        builder.setSingleChoiceItems(answers.toTypedArray(), -1) { dialog, index ->
+            // Log the selected answer
+            Log.d(TAG, "Selected answer: ${answers[index]}")
 
+            // CONTINUEEEEEEEE
+            // REGISTER THE ACTION HERE
+            // WRITE THE ANSWER TO THE CSV FILE
+
+            // close the dialog
+            dialog.dismiss()
+            // Here you can handle the answer selection
+        }
+
+        // Set the positive button action
+        builder.setPositiveButton("OK") { dialog, which ->
+            // Handle the OK button
+        }
+
+        // Set the negative button action
+        builder.setNegativeButton("Cancel") { dialog, which ->
+            // Handle the Cancel button
+        }
+
+        // Create the AlertDialog
+        val dialog: AlertDialog = builder.create()
+
+        // Show the AlertDialog
+        dialog.show()
+    }
 }
 

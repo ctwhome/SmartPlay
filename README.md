@@ -4,9 +4,9 @@ Android OS Wear Application to measure children's activity when playing
 ## Setting Workflows
 Inside the Device File Explorer, set the workflows file in this path:
 ```shell
-/storage/emulated/0/Android/data/com.example.smartplay/files/workflow/workflow.json
+/storage/emulated/0/Android/data/com.example.smartplay/files/workflow/workflows.json
 ```
-You can find the workflow.json demo file in the app/sampledata folder of this repository.
+You can find the workflows.json demo file in the app/sampledata folder of this repository.
 
 ### ⌚️ Installing the application on the device
 Make sure you have adb installed on your computer and the watch is connected to your computer, via usb or wifi.
