@@ -1,12 +1,17 @@
 package com.example.smartplay
+
 import java.io.File
 import android.app.AlertDialog
 import android.content.Context
 
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
+import android.util.Log
 
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -76,6 +81,7 @@ class MainActivity : AppCompatActivity() {
             workflowJsonFile.writeText(content)
         }
     }
+
     fun showMessageDialog(context: Context) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("Message Title")
@@ -91,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         val dialog: AlertDialog = builder.create()
         dialog.show()
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -104,7 +111,7 @@ class MainActivity : AppCompatActivity() {
             // Check it the /storage/emulated/0/Android/data/com.example.smartplay/files/workflow/workflow.json file exists
             val file = applicationContext.getFileStreamPath("workflow/workflow.json")
             if (file.exists()) {
-            startActivity(intent)
+                startActivity(intent)
             }
 //            else {
 //                // Show a pop-up message to the user to inform there is no workflow file set up.
@@ -135,5 +142,31 @@ class MainActivity : AppCompatActivity() {
             // Close the app
             finish()
         }
+    }
+
+
+    //    show battery level in the @+id/batteryLevel field
+    fun showBatteryLevel() {
+        val batteryLevel = getBatteryLevel()
+        findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
+    }
+
+    private fun getBatteryLevel(): String {
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+            applicationContext.registerReceiver(null, ifilter)
+        }
+        val level: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+
+        val batteryPct = level.toFloat() / scale.toFloat()
+        // log battery level
+         Log.d("Battery Level", "Battery Level: $batteryPct")
+        return "${batteryPct * 100}%"
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showBatteryLevel()
     }
 }
