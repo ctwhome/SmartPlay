@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         buttonOpenSecondActivity.setOnClickListener {
             val intent = Intent(this@MainActivity, SettingsActivity::class.java)
             startActivity(intent)
-            // Check it the /storage/emulated/0/Android/data/com.example.smartplay/files/workflow/workflows.json file exists
+            // Check it the /storage/emulated/0/Android/data/com.example.smartplay/files/workflows.json file exists
             val file = applicationContext.getFileStreamPath("workflows.json")
             if (file.exists()) {
                 startActivity(intent)
