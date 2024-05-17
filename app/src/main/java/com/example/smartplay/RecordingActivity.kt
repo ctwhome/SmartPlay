@@ -37,20 +37,11 @@ import com.google.gson.reflect.TypeToken
 
 import android.os.Handler
 import android.os.Looper
+import com.example.smartplay.utils.Question
+import com.example.smartplay.utils.Workflow
+import com.example.smartplay.utils.scheduleCustomDialogs
+import com.example.smartplay.utils.showMessageDialog
 
-data class Question(
-    val question_id: Int,
-    val question_title: String,
-    val answers: List<String>,
-    val frequency: Int = 1,
-    val time_after_start_in_minutes: Int = 1,
-    val time_between_repetitions_in_minutes: Int = 1
-)
-
-data class Workflow(
-    val workflow_name: String,
-    val questions: List<Question>
-)
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
@@ -167,106 +158,44 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
 
-//        scheduleCustomDialogs(workflow)
+        scheduleCustomDialogs(workflow, this)
 
 
         // I might not need this after the previous implementation
-        val questions = workflow[0].questions.map {
-            Log.d(TAG, "Question: ${it.question_title}")
-            Log.d(TAG, "Answers: ${it.answers}")
-            Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
-            Log.d(TAG, "frequency: ${it.frequency}")
-            Log.d(TAG, "Time after start in minutes: ${it.time_between_repetitions_in_minutes}")
-
-            if (it.time_after_start_in_minutes != null) {
-                Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
-                Thread {
-
-                    //
-                    // !CONTINUE HERE
-                    // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
-                    // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
-                    //
-
-//                Thread.sleep(it.time_after_start_in_minutes.toLong() * 60 * 1000) // multiply by 60 to convert to minutes
-                    Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
-                    Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
-
-                    // Ensure UI updates are done on the Main Thread
-                    runOnUiThread {
-                        showMessageDialog(this, it.question_title, it.answers)
-                    }
-
-                }.start()
-            }
-        }
-
-
-    }
-
-    val TAG = "CustomDialogScheduler"
-
-    fun scheduleCustomDialogs(workflow: List<Workflow>) {
-        workflow[0].questions.forEach { question ->
-            Log.d(TAG, "Question: ${question.question_title}")
-            Log.d(TAG, "Answers: ${question.answers}")
-            Log.d(TAG, "Time after start in minutes: ${question.time_after_start_in_minutes}")
-            Log.d(TAG, "Frequency: ${question.frequency}")
-            Log.d(
-                TAG,
-                "Time between repetitions in minutes: ${question.time_between_repetitions_in_minutes}"
-            )
-
-            question.time_after_start_in_minutes?.let { startTime ->
-                val initialDelay = startTime * 60 * 1000L // Convert to milliseconds
-                val handler = Handler(Looper.getMainLooper())
-
-                // Schedule the initial dialog
-                handler.postDelayed({
-                    showMessageDialog(this, question.question_title, question.answers)
-                    scheduleRepetitions(handler, question)
-                }, initialDelay)
-            }
-        }
-    }
-
-    fun scheduleRepetitions(handler: Handler, question: Question) {
-        question.frequency?.let { frequency ->
-            // convert to minutes by multiplying by 60
+//        val questions = workflow[0].questions.map {
+//            Log.d(TAG, "Question: ${it.question_title}")
+//            Log.d(TAG, "Answers: ${it.answers}")
+//            Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
+//            Log.d(TAG, "frequency: ${it.frequency}")
+//            Log.d(TAG, "Time after start in minutes: ${it.time_between_repetitions_in_minutes}")
 //
+//            if (it.time_after_start_in_minutes != null) {
+//                Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
+//                Thread {
 //
-//            CONTINUE HERE PROVIDE THE NULL WITH A DEFAULT NAME SO I CAN MAKE A MULTIPLICATION OF IT
+//                    //
+//                    // !CONTINUE HERE
+//                    // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
+//                    // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
+//                    //
 //
+////                Thread.sleep(it.time_after_start_in_minutes.toLong() * 60 * 1000) // multiply by 60 to convert to minutes
+//                    Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
+//                    Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
 //
-
-
-//            val repetitionInterval = question.time_between_repetitions_in_minutes * 60 * 1000L // Convert to milliseconds
-            val repetitionInterval =
-                question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
-            for (i in 1 until frequency) {
-                handler.postDelayed({
-                    showMessageDialog(this, question.question_title, question.answers)
-//                    showMessageDialog(question.question_title, question.answers)
-                }, i * repetitionInterval)
-            }
-        }
-    }
-
-//    fun showMessageDialog(title: String, answers: List<String>) {
-//        // Implementation of your custom dialog
-//        // Example:
-//        val context = // Get your context here
-//        val dialog = AlertDialog.Builder(context)
-//            .setTitle(title)
-//            .setItems(answers.toTypedArray()) { dialog, which ->
-//                // Handle item click
+//                    // Ensure UI updates are done on the Main Thread
+//                    runOnUiThread {
+//                        showMessageDialog(this, it.question_title, it.answers)
+//                    }
+//
+//                }.start()
 //            }
-//            .create()
-//        dialog.show()
-//    }
+//        }
 
 
-    // END OF WORKFLOWS
+    }
+
+
 
     fun getWatchId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
@@ -483,59 +412,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     }
 
 
-    // Dialog for the notifications messages, but get the
-    private fun showMessageDialog(context: Context, question: String, answers: List<String>) {
-        // Check and log if the answers are empty
-        if (answers.isEmpty()) {
-            Log.d(TAG, "No answers provided to the dialog")
-            return
-        }
 
-        // Logging answers to debug them
-        Log.d(TAG, "Answers: $answers")
-
-        // Creating an AlertDialog builder
-        val builder = AlertDialog.Builder(context)
-
-        // Set the title of the dialog to the question
-        builder.setTitle(question)
-
-        // Optional: Remove this setMessage if you want only the list visible
-        // builder.setMessage("Select an answer")
-
-
-        // MAKE A CUSTOM LAYOUT TO DISPLAY THE QUESTIONS
-
-
-        // Use setSingleChoiceItems for a list of selectable items
-        builder.setSingleChoiceItems(answers.toTypedArray(), -1) { dialog, index ->
-            // Log the selected answer
-            Log.d(TAG, "Selected answer: ${answers[index]}")
-
-            // CONTINUEEEEEEEE
-            // REGISTER THE ACTION HERE
-            // WRITE THE ANSWER TO THE CSV FILE
-
-            // close the dialog
-            dialog.dismiss()
-            // Here you can handle the answer selection
-        }
-
-        // Set the positive button action
-        builder.setPositiveButton("OK") { dialog, which ->
-            // Handle the OK button
-        }
-
-        // Set the negative button action
-        builder.setNegativeButton("Cancel") { dialog, which ->
-            // Handle the Cancel button
-        }
-
-        // Create the AlertDialog
-        val dialog: AlertDialog = builder.create()
-
-        // Show the AlertDialog
-        dialog.show()
-    }
 }
 

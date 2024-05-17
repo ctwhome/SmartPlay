@@ -19,6 +19,7 @@ import android.widget.EditText
 import android.widget.Spinner
 //import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smartplay.utils.Workflow
 import java.io.File
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -175,7 +176,7 @@ class SettingsActivity : AppCompatActivity() {
     // Read workflow from JSON file (Original Function)
     private fun readFileFromSDCard(): List<String> {
         val path =
-            Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflow/workflows.json"
+            Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflows.json"
 
         // check if the file exists
         if (!File(path).exists()) {
@@ -200,4 +201,3 @@ class SettingsActivity : AppCompatActivity() {
         return workflows.map { it.workflow_name }
     }
 }
-
