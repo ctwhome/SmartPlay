@@ -2,8 +2,11 @@ package com.example.smartplay.utils
 
 import android.app.AlertDialog
 import android.content.Context
+import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 
 data class Question(
@@ -63,7 +66,10 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
 }
 
 fun showMessageDialog(context: Context, question: String, answers: List<String>) {
-    // make sound and vibrate
+    // Make sound and vibrate
+    playSound(context)
+    vibrate(context)
+
 
     // show dialog
     if (answers.isEmpty()) {
@@ -88,4 +94,22 @@ fun showMessageDialog(context: Context, question: String, answers: List<String>)
 
     val dialog: AlertDialog = builder.create()
     dialog.show()
+}
+
+
+/* Audio and Vibration */
+fun playSound(context: Context) {
+    // Play a notification sound
+    val mediaPlayer = MediaPlayer.create(context, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
+    mediaPlayer.setOnCompletionListener { mp ->
+        mp.release()
+    }
+    mediaPlayer.start()
+}
+
+fun vibrate(context: Context) {
+    // Vibrate the device
+    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+    vibrator.vibrate(vibrationEffect)
 }

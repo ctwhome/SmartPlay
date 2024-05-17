@@ -22,7 +22,7 @@
           "🪫"
         ],
         "time_after_start_in_minutes": 2,
-        "frequency": 5,
+        "frequency": 2,
         "time_between_repetitions_in_minutes": 2
       },
       {
@@ -43,14 +43,25 @@
     "questions": [
       {
         "question_id": 1,
-        "question_title": "How do you feel?",
+        "question_title": "How do you feel? only once",
         "answers": [
           "🔥 on fire",
           "🚀"
         ],
+        "time_after_start_in_minutes": 1,
+        "frequency": 1,
+        "time_between_repetitions_in_minutes": 1
+      },
+      {
+        "question_id": 2,
+        "question_title": "The second question two times after 5 minutes",
+        "answers": [
+          "🥵",
+          "🥶"
+        ],
         "time_after_start_in_minutes": 3,
         "frequency": 2,
-        "time_between_repetitions_in_minutes": 2
+        "time_between_repetitions_in_minutes": 5
       }
     ]
   },
