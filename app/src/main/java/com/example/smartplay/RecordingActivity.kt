@@ -35,6 +35,22 @@ import android.view.WindowManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
+import android.os.Handler
+import android.os.Looper
+
+data class Question(
+    val question_id: Int,
+    val question_title: String,
+    val answers: List<String>,
+    val frequency: Int? = null,
+    val time_after_start_in_minutes: Int? = null,
+    val time_between_repetitions_in_minutes: Int? = null
+)
+
+data class Workflow(
+    val workflow_name: String,
+    val questions: List<Question>
+)
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
@@ -151,34 +167,102 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
 
-        val questions = workflow[0].questions.map {
+        scheduleCustomDialogs(workflow)
+
+
+        // I might not need this after the previous implementation
+        /*val questions = workflow[0].questions.map {
             Log.d(TAG, "Question: ${it.question_title}")
+            Log.d(TAG, "Answers: ${it.answers}")
+            Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
+            Log.d(TAG, "frequency: ${it.frequency}")
+            Log.d(TAG, "Time after start in minutes: ${it.time_between_repetitions_in_minutes}")
+
             if (it.time_after_start_in_minutes != null) {
                 Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
-            Thread {
+                Thread {
 
-                //
-                // !CONTINUE HERE
-                // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
-                // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
-                //
+                    //
+                    // !CONTINUE HERE
+                    // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
+                    // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
+                    //
 
 //                Thread.sleep(it.time_after_start_in_minutes.toLong() * 60 * 1000) // multiply by 60 to convert to minutes
-                Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
-                Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
+                    Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
+                    Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
 
+                    // Ensure UI updates are done on the Main Thread
+                    runOnUiThread {
+                        showMessageDialog(this, it.question_title, it.answers)
+                    }
 
-                // Ensure UI updates are done on the Main Thread
-                runOnUiThread {
-                showMessageDialog(this, it.question_title, it.answers)
-                }
-
-            }.start()
+                }.start()
             }
-        }
+        }*/
 
 
     }
+
+    val TAG = "CustomDialogScheduler"
+
+    fun scheduleCustomDialogs(workflow: List<Workflow>) {
+        workflow[0].questions.forEach { question ->
+            Log.d(TAG, "Question: ${question.question_title}")
+            Log.d(TAG, "Answers: ${question.answers}")
+            Log.d(TAG, "Time after start in minutes: ${question.time_after_start_in_minutes}")
+            Log.d(TAG, "Frequency: ${question.frequency}")
+            Log.d(TAG, "Time between repetitions in minutes: ${question.time_between_repetitions_in_minutes}")
+
+            question.time_after_start_in_minutes?.let { startTime ->
+                val initialDelay = startTime * 60 * 1000L // Convert to milliseconds
+                val handler = Handler(Looper.getMainLooper())
+
+                // Schedule the initial dialog
+                handler.postDelayed({
+                    showMessageDialog(this, question.question_title, question.answers)
+                    scheduleRepetitions(handler, question)
+                }, initialDelay)
+            }
+        }
+    }
+
+    fun scheduleRepetitions(handler: Handler, question: Question) {
+        question.frequency?.let { frequency ->
+            // convert to minutes by multiplying by 60
+//
+//
+//            CONTINUE HERE PROVIDE THE NULL WITH A DEFAULT NAME SO I CAN MAKE A MULTIPLICATION OF IT
+//
+//
+
+
+//            val repetitionInterval = question.time_between_repetitions_in_minutes * 60 * 1000L // Convert to milliseconds
+            val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
+            for (i in 1 until frequency) {
+                handler.postDelayed({
+                    showMessageDialog(this, question.question_title, question.answers)
+//                    showMessageDialog(question.question_title, question.answers)
+                }, i * repetitionInterval)
+            }
+        }
+    }
+
+//    fun showMessageDialog(title: String, answers: List<String>) {
+//        // Implementation of your custom dialog
+//        // Example:
+//        val context = // Get your context here
+//        val dialog = AlertDialog.Builder(context)
+//            .setTitle(title)
+//            .setItems(answers.toTypedArray()) { dialog, which ->
+//                // Handle item click
+//            }
+//            .create()
+//        dialog.show()
+//    }
+
+
+    // END OF WORKFLOWS
 
     fun getWatchId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
@@ -396,7 +480,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
 
     // Dialog for the notifications messages, but get the
-    fun showMessageDialog(context: Context, question: String, answers: List<String>) {
+    private fun showMessageDialog(context: Context, question: String, answers: List<String>) {
         // Check and log if the answers are empty
         if (answers.isEmpty()) {
             Log.d(TAG, "No answers provided to the dialog")

@@ -23,20 +23,6 @@ import java.io.File
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-
-data class Workflow(
-    val workflow_name: String, val questions: List<Question>
-)
-
-data class Question(
-    val question_id: Int,
-    val question_title: String,
-    val answers: List<String>,
-    val time_after_start_in_minutes: Int? = null,
-    val frequency: Int? = null,
-    val frequency_in_minutes: Int? = null
-)
-
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
