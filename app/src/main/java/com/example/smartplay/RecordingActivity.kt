@@ -42,9 +42,9 @@ data class Question(
     val question_id: Int,
     val question_title: String,
     val answers: List<String>,
-    val frequency: Int? = null,
-    val time_after_start_in_minutes: Int? = null,
-    val time_between_repetitions_in_minutes: Int? = null
+    val frequency: Int = 1,
+    val time_after_start_in_minutes: Int = 1,
+    val time_between_repetitions_in_minutes: Int = 1
 )
 
 data class Workflow(
@@ -167,11 +167,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
 
-        scheduleCustomDialogs(workflow)
+//        scheduleCustomDialogs(workflow)
 
 
         // I might not need this after the previous implementation
-        /*val questions = workflow[0].questions.map {
+        val questions = workflow[0].questions.map {
             Log.d(TAG, "Question: ${it.question_title}")
             Log.d(TAG, "Answers: ${it.answers}")
             Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
@@ -199,7 +199,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
                 }.start()
             }
-        }*/
+        }
 
 
     }
@@ -212,7 +212,10 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             Log.d(TAG, "Answers: ${question.answers}")
             Log.d(TAG, "Time after start in minutes: ${question.time_after_start_in_minutes}")
             Log.d(TAG, "Frequency: ${question.frequency}")
-            Log.d(TAG, "Time between repetitions in minutes: ${question.time_between_repetitions_in_minutes}")
+            Log.d(
+                TAG,
+                "Time between repetitions in minutes: ${question.time_between_repetitions_in_minutes}"
+            )
 
             question.time_after_start_in_minutes?.let { startTime ->
                 val initialDelay = startTime * 60 * 1000L // Convert to milliseconds
@@ -238,7 +241,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
 
 //            val repetitionInterval = question.time_between_repetitions_in_minutes * 60 * 1000L // Convert to milliseconds
-            val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
+            val repetitionInterval =
+                question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
             for (i in 1 until frequency) {
                 handler.postDelayed({
                     showMessageDialog(this, question.question_title, question.answers)
