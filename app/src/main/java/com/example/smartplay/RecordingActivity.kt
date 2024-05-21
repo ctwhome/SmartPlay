@@ -30,17 +30,12 @@ import android.provider.Settings
 
 
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.view.WindowManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-import android.os.Handler
-import android.os.Looper
-import com.example.smartplay.utils.Question
 import com.example.smartplay.utils.Workflow
 import com.example.smartplay.utils.scheduleCustomDialogs
-import com.example.smartplay.utils.showMessageDialog
 import com.example.smartplay.utils.stopAllNotifications
 
 
@@ -49,6 +44,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private lateinit var sensorManager: SensorManager
     private lateinit var locationManager: LocationManager
     private lateinit var csvWriter: FileWriter
+    private lateinit var csvQuestionWriter: FileWriter
     private var heartRateSensor: Sensor? = null
     private var accelerometerSensor: Sensor? = null
     private var gyroscopeSensor: Sensor? = null
@@ -74,6 +70,33 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var magnetoZ: Float = 0F
 
     private var timestamp: Long = 0
+
+
+    companion object {
+        private lateinit var csvQuestionWriter: FileWriter
+
+        fun writeQuestionsToCSV(
+            timestamp: Long,
+            questionID: String,
+            questionText: String,
+            answer: String
+        ) {
+            try {
+                csvQuestionWriter?.append("$timestamp,$questionID,$questionText,$answer\n")
+                csvQuestionWriter?.flush() // Ensure data is written to the file
+                Log.d(TAG, "Question logged: $timestamp,$questionID,$questionText,$answer")
+            } catch (e: IOException) {
+                Log.e(TAG, "Error writing to CSV: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        fun setCSVWriter(writer: FileWriter) {
+            csvQuestionWriter = writer
+        }
+    }
+
+
 
     private val locationListener: LocationListener = LocationListener { location ->
         latitude = location.latitude
@@ -156,44 +179,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
         // parse the json file workflowFile
-
-        Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
-
+        // Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
         scheduleCustomDialogs(workflow, this)
-
-
-        // I might not need this after the previous implementation
-//        val questions = workflow[0].questions.map {
-//            Log.d(TAG, "Question: ${it.question_title}")
-//            Log.d(TAG, "Answers: ${it.answers}")
-//            Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
-//            Log.d(TAG, "frequency: ${it.frequency}")
-//            Log.d(TAG, "Time after start in minutes: ${it.time_between_repetitions_in_minutes}")
-//
-//            if (it.time_after_start_in_minutes != null) {
-//                Log.d(TAG, "Time after start in minutes: ${it.time_after_start_in_minutes}")
-//                Thread {
-//
-//                    //
-//                    // !CONTINUE HERE
-//                    // MAKE THE DIALOG NICE AND PRETTY and STORE THE ANSWERS IN THE CSV FILE
-//                    // DO NOT FORGET TO CHANGE THE TIME TO MINUTES MULTIPLY BY 60
-//                    //
-//
-////                Thread.sleep(it.time_after_start_in_minutes.toLong() * 60 * 1000) // multiply by 60 to convert to minutes
-//                    Thread.sleep(it.time_after_start_in_minutes.toLong() * 1000)
-//                    Log.d(TAG, "Question: ${it.question_title} => ${it.answers}")
-//
-//                    // Ensure UI updates are done on the Main Thread
-//                    runOnUiThread {
-//                        showMessageDialog(this, it.question_title, it.answers)
-//                    }
-//
-//                }.start()
-//            }
-//        }
-
-
     }
 
 
@@ -207,23 +194,22 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
-
-//      val childId = "001"
-        // Getting data from the setting page
-//        val childId = intent.getStringExtra("idChild")
-        // console log childId
-        println("childId: $childId")
-
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         val file = File(dir, childId + "_" + watchId + "_" + timestamp + ".csv")
+        val questionFile = File(dir, childId + "_QUESTIONS_" + watchId + "_" + timestamp + ".csv")
         try {
             csvWriter = FileWriter(file, true)
+            csvQuestionWriter = FileWriter(questionFile, true)
+            RecordingActivity.setCSVWriter(csvQuestionWriter)
 
             // If file is empty, write the header columns for the CSV file
             if (file.length() == 0L) {
                 csvWriter.append("timestamp,latitude,longitude,heartRate,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,magnetoX,magnetoY,magnetoZ\n")
+            }
+            if (questionFile.length() == 0L) {
+                csvQuestionWriter.append("timestamp,questionID,questionText,answer\n")
             }
             isRecording = true
         } catch (e: IOException) {
@@ -319,6 +305,31 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             lastUpdateTime = SystemClock.elapsedRealtime()
         }
     }
+
+//     public fun writeQuestionsToCSV(
+//        timestamp: Long,
+//        questionID: String,
+//        questionText: String,
+//        answer: String
+//    ) {
+//
+//        try {
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
+//
+//            csvQuestionWriter.append("$timestamp,$questionID,$questionText,$answer\n")
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        }
+//    }
 
     private fun writeDataToCSV(
         timestamp: Long,
