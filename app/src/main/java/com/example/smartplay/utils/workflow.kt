@@ -25,6 +25,9 @@ data class Workflow(
 
 val TAG = "CustomDialogScheduler"
 
+// List to keep track of handlers and runnables
+val handlerRunnablePairs = mutableListOf<Pair<Handler, Runnable>>()
+
 fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
     workflow[0].questions.forEach { question ->
         Log.d(TAG, "Question: ${question.question_title}")
@@ -35,32 +38,45 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
 
         // Schedule initial dialog if time_after_start_in_minutes is not null
         val startTime = question.time_after_start_in_minutes
-//        val initialDelay = startTime * 60 * 1000L // Convert to milliseconds
         val initialDelay = startTime * 1000L // Convert to milliseconds
         val handler = Handler(Looper.getMainLooper())
 
         Log.d(TAG, "Scheduling initial dialog with delay: $initialDelay ms")
 
-        // Schedule the initial dialog
-        handler.postDelayed({
+        // Define the runnable
+        val initialRunnable = Runnable {
             showMessageDialog(context, question.question_title, question.answers)
             scheduleRepetitions(handler, question, context)
-        }, initialDelay)
+        }
+
+        // Schedule the initial dialog
+        handler.postDelayed(initialRunnable, initialDelay)
+
+        // Add to list of handlers and runnables
+        handlerRunnablePairs.add(handler to initialRunnable)
     }
 }
 
 fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
     val frequency = question.frequency
-//    val repetitionInterval = question.time_between_repetitions_in_minutes * 60 * 1000L // Convert to milliseconds
     val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
 
     Log.d(TAG, "Scheduling repetitions every: $repetitionInterval ms for $frequency times")
 
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
-        handler.postDelayed({
+
+        // Define the runnable
+        val repetitionRunnable = Runnable {
             showMessageDialog(context, question.question_title, question.answers)
-        }, delay)
+        }
+
+        // Schedule the repetition
+        handler.postDelayed(repetitionRunnable, delay)
+
+        // Add to list of handlers and runnables
+        handlerRunnablePairs.add(handler to repetitionRunnable)
+
         Log.d(TAG, "Scheduled repetition $i with delay: $delay ms")
     }
 }
@@ -69,7 +85,6 @@ fun showMessageDialog(context: Context, question: String, answers: List<String>)
     // Make sound and vibrate
     playSound(context)
     vibrate(context)
-
 
     // show dialog
     if (answers.isEmpty()) {
@@ -85,17 +100,16 @@ fun showMessageDialog(context: Context, question: String, answers: List<String>)
         Log.d(TAG, "Selected answer: ${answers[index]}")
         dialog.dismiss()
     }
-    builder.setPositiveButton("OK") { dialog, _ ->
-        dialog.dismiss()
-    }
-    builder.setNegativeButton("Cancel") { dialog, _ ->
-        dialog.dismiss()
-    }
+//    builder.setPositiveButton("OK") { dialog, _ ->
+//        dialog.dismiss()
+//    }
+//    builder.setNegativeButton("Cancel") { dialog, _ ->
+//        dialog.dismiss()
+//    }
 
     val dialog: AlertDialog = builder.create()
     dialog.show()
 }
-
 
 /* Audio and Vibration */
 fun playSound(context: Context) {
@@ -112,4 +126,14 @@ fun vibrate(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
     vibrator.vibrate(vibrationEffect)
+}
+
+// Function to stop all scheduled notifications
+fun stopAllNotifications() {
+    Log.d(TAG, "Stopping all scheduled notifications...")
+    for ((handler, runnable) in handlerRunnablePairs) {
+        handler.removeCallbacks(runnable)
+    }
+    handlerRunnablePairs.clear()
+    Log.d(TAG, "All scheduled notifications have been stopped.")
 }

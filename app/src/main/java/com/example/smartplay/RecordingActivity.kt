@@ -41,6 +41,7 @@ import com.example.smartplay.utils.Question
 import com.example.smartplay.utils.Workflow
 import com.example.smartplay.utils.scheduleCustomDialogs
 import com.example.smartplay.utils.showMessageDialog
+import com.example.smartplay.utils.stopAllNotifications
 
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
@@ -251,6 +252,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         isRecording = false
         sensorManager.unregisterListener(this)
         locationManager.removeUpdates(this)
+        stopAllNotifications()
         try {
             csvWriter.flush()
             csvWriter.close()
