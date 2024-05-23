@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="V 0.7 - 15-04-2024" />
+            android:text="V 0.8 - 17-05-2024" />
 
         <!--        align inside elements to the center-->
         <LinearLayout
@@ -53,13 +53,13 @@
             android:gravity="center"
             android:orientation="horizontal">
 
-        <!-- Record Button -->
-        <Button
-            android:id="@+id/button_record"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Record" />
+            <!-- Record Button -->
+            <Button
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Record" />
             <!-- Close App Button -->
             <Button
                 android:id="@+id/closeAppButton"
@@ -69,5 +69,26 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+            <!-- Battery Level -->
+            <TextView
+                android:id="@+id/batteryLevelTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="🔋" />
+            <!-- Battery Level -->
+            <TextView
+                android:id="@+id/batteryLevel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="100%" />
+
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

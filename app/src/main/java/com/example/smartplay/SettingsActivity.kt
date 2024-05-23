@@ -10,6 +10,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
@@ -18,24 +19,11 @@ import android.widget.EditText
 import android.widget.Spinner
 //import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smartplay.utils.Workflow
 import java.io.File
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-
-data class Workflow(
-    val workflow_name: String,
-    val questions: List<Question>
-)
-
-data class Question(
-    val question_id: Int,
-    val question_title: String,
-    val answers: List<String>,
-    val time_after_start_in_minutes: Any,  // This can be String or Int based on the example
-    val frequency: Int? = null,
-    val frequency_in_minutes: Int? = null
-)
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,11 +46,11 @@ class SettingsActivity : AppCompatActivity() {
         val idInput: EditText = findViewById(R.id.id_input)
         idInput.setText(sharedPref.getString("idChild", ""))
         idInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 // Save the new value to SharedPreferences when the input changes
-                saveToSharedPreferences("idChild",s.toString())
+                saveToSharedPreferences("idChild", s.toString())
             }
         })
 
@@ -74,11 +62,11 @@ class SettingsActivity : AppCompatActivity() {
         // To set a value to the EditText from the SharedPreferences or a default value of 1000
         frequencyRate.setText(sharedPref.getString("frequencyRate", "3000"))
         frequencyRate.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 // Save the new value to SharedPreferences when the input changes
-                saveToSharedPreferences("frequencyRate",s.toString())
+                saveToSharedPreferences("frequencyRate", s.toString())
             }
         })
 
@@ -99,6 +87,27 @@ class SettingsActivity : AppCompatActivity() {
         // Apply the adapter to the spinner
         spinnerWorkflow.adapter = adapter
 
+        // Set the selected item from the SharedPreferences
+        val selectedWorkflow = sharedPref.getString("selectedWorkflow", "")
+        if (selectedWorkflow != "") {
+            val spinnerPosition = adapter.getPosition(selectedWorkflow)
+            spinnerWorkflow.setSelection(spinnerPosition)
+        }
+
+        // on spinner change, save the value to shared preferences
+        spinnerWorkflow.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>, view: View, position: Int, id: Long
+            ) {
+                saveToSharedPreferences(
+                    "selectedWorkflow", parent.getItemAtPosition(position).toString()
+                )
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                // Another interface callback
+            }
+        }
 
         //
         // Checkboxes for the sensors
@@ -109,7 +118,8 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences("checkBoxHeartRate", isChecked.toString())
         }
         val checkBoxAccelerometer: CheckBox = findViewById(R.id.checkBoxAccelerometer)
-        checkBoxAccelerometer.isChecked = sharedPref.getString("checkBoxAccelerometer", "true").toBoolean()
+        checkBoxAccelerometer.isChecked =
+            sharedPref.getString("checkBoxAccelerometer", "true").toBoolean()
         checkBoxAccelerometer.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxAccelerometer", isChecked.toString())
         }
@@ -119,7 +129,8 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences("checkBoxGyroscope", isChecked.toString())
         }
         val checkBoxMagnetometer: CheckBox = findViewById(R.id.checkBoxMagnetometer)
-        checkBoxMagnetometer.isChecked = sharedPref.getString("checkBoxMagnetometer", "true").toBoolean()
+        checkBoxMagnetometer.isChecked =
+            sharedPref.getString("checkBoxMagnetometer", "true").toBoolean()
         checkBoxMagnetometer.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxMagnetometer", isChecked.toString())
         }
@@ -128,11 +139,6 @@ class SettingsActivity : AppCompatActivity() {
         checkBoxLocation.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxLocation", isChecked.toString())
         }
-
-
-
-
-
     }
 
 
@@ -168,41 +174,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     // Read workflow from JSON file (Original Function)
-        private fun readFileFromSDCard(): List<String> {
-            val path = Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflow/workflow.json"
-            Log.d(TAG, "Path: $path")
+    private fun readFileFromSDCard(): List<String> {
+        val path =
+            Environment.getExternalStorageDirectory().path + "/Android/data/com.example.smartplay/files/workflows.json"
+
+        // check if the file exists
+        if (!File(path).exists()) {
+            Log.d(TAG, "File does not exist")
+            return emptyList()
+        }
         // log the file content
-        Log.d(TAG, "File content: ${
-            try {
-                File(path).readText()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error reading workflow file: ${e.message}")
-                ""
-            }
-        }")
+        saveToSharedPreferences("workflowFile", File(path).readText())
 
-            return getWorkflowNamesFromJSON(path)
-        }
-
-
-   /* private fun readFileFromSDCard(): List<String> {
-        // Update the path to use getExternalFilesDir for better practice and to avoid hardcoding paths
-        val externalFilesDir = getExternalFilesDir(null)?.path ?: return emptyList() // null-safety check
-        val path = "$externalFilesDir/workflow/workflow.json"
-
-        Log.d(TAG, "Path: $path")
-
-        return try {
-            val jsonContent = File(path).readText()
-            val gson = Gson()
-            val workflowListType = object : TypeToken<List<Workflow>>() {}.type
-            val workflows: List<Workflow> = gson.fromJson(jsonContent, workflowListType)
-            workflows.map { it.workflow_name }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error reading workflow file: ${e.message}")
-            emptyList()
-        }
-    }*/
+        // return the list of workflow names
+        return getWorkflowNamesFromJSON(path)
+    }
 
 
     private fun getWorkflowNamesFromJSON(path: String): List<String> {
@@ -215,4 +201,3 @@ class SettingsActivity : AppCompatActivity() {
         return workflows.map { it.workflow_name }
     }
 }
-
