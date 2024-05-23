@@ -26,20 +26,14 @@ data class Workflow(
 
 val TAG = "CustomDialogScheduler"
 
-// List to keep track of handlers and runnables
-val handlerRunnablePairs = mutableListOf<Pair<Handler, Runnable>>()
+// Map to keep track of handlers and runnables by question ID
+val handlerRunnableMap = mutableMapOf<Int, MutableList<Pair<Handler, Runnable>>>()
+
+// Map to keep track of active dialogs by question ID
+val activeDialogsMap = mutableMapOf<Int, AlertDialog>()
 
 fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
     workflow[0].questions.forEach { question ->
-//        Log.d(TAG, "Question: ${question.question_title}")
-//        Log.d(TAG, "Answers: ${question.answers}")
-//        Log.d(TAG, "Time after start in minutes: ${question.time_after_start_in_minutes}")
-//        Log.d(TAG, "Frequency: ${question.frequency}")
-//        Log.d(TAG, "Time between repetitions in minutes: ${question.time_between_repetitions_in_minutes}")
-//        Log.d(TAG, "Scheduling initial dialog with delay: $initialDelay ms")
-//        Log.d(TAG, "QUESTION: $question ms")
-
-        // Schedule initial dialog if time_after_start_in_minutes is not null
         val startTime = question.time_after_start_in_minutes
         val initialDelay = startTime * 1000L // Convert to milliseconds
         val handler = Handler(Looper.getMainLooper())
@@ -50,19 +44,21 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
             scheduleRepetitions(handler, question, context)
         }
 
+        // Cancel any existing tasks and close any existing dialogs with the same question ID
+        cancelScheduledTasks(question.question_id)
+        closeActiveDialog(question.question_id)
+
         // Schedule the initial dialog
         handler.postDelayed(initialRunnable, initialDelay)
 
-        // Add to list of handlers and runnables
-        handlerRunnablePairs.add(handler to initialRunnable)
+        // Add to map of handlers and runnables by question ID
+        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to initialRunnable)
     }
 }
 
 fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
     val frequency = question.frequency
     val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
-
-    Log.d(TAG, "Scheduling repetitions every: $repetitionInterval ms for $frequency times")
 
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
@@ -75,11 +71,25 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
         // Schedule the repetition
         handler.postDelayed(repetitionRunnable, delay)
 
-        // Add to list of handlers and runnables
-        handlerRunnablePairs.add(handler to repetitionRunnable)
-
-        Log.d(TAG, "Scheduled repetition $i with delay: $delay ms")
+        // Add to map of handlers and runnables by question ID
+        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to repetitionRunnable)
     }
+}
+
+fun cancelScheduledTasks(questionId: Int) {
+    handlerRunnableMap[questionId]?.forEach { (handler, runnable) ->
+        handler.removeCallbacks(runnable)
+    }
+    handlerRunnableMap.remove(questionId)
+}
+
+fun closeActiveDialog(questionId: Int) {
+    activeDialogsMap[questionId]?.let { dialog ->
+        if (dialog.isShowing) {
+            dialog.dismiss()
+        }
+    }
+    activeDialogsMap.remove(questionId)
 }
 
 fun showMessageDialog(context: Context, question: Question) {
@@ -94,24 +104,17 @@ fun showMessageDialog(context: Context, question: Question) {
         "asked"
     )
 
-    // Save when the question was asked
-    // "timestamp,question,asked/answer"
-
-
-
     // show dialog
     if (question.answers.isEmpty()) {
         Log.d(TAG, "No answers provided to the dialog")
         return
     }
 
-    Log.d(TAG, "Showing dialog for question: ${question.question_title} with answers: $question.answers")
+    Log.d(TAG, "Showing dialog for question: ${question.question_title} with answers: ${question.answers}")
 
     val builder = AlertDialog.Builder(context)
     builder.setTitle(question.question_title)
     builder.setSingleChoiceItems(question.answers.toTypedArray(), -1) { dialog, index ->
-
-        // Save the response to the CSV file
         val timestamp = System.currentTimeMillis()
         Log.d(TAG, "Selected answer: ${timestamp}, ${question.question_id}, ${question.question_title}, ${question.answers[index]}")
         RecordingActivity.writeQuestionsToCSV(
@@ -121,24 +124,18 @@ fun showMessageDialog(context: Context, question: Question) {
             question.answers[index]
         )
 
-
         // Dismiss the dialog
         dialog.dismiss()
     }
-//    builder.setPositiveButton("OK") { dialog, _ ->
-//        dialog.dismiss()
-//    }
-//    builder.setNegativeButton("Cancel") { dialog, _ ->
-//        dialog.dismiss()
-//    }
 
     val dialog: AlertDialog = builder.create()
+    closeActiveDialog(question.question_id) // Close any existing dialog before showing the new one
+    activeDialogsMap[question.question_id] = dialog
     dialog.show()
 }
 
 /* Audio and Vibration */
 fun playSound(context: Context) {
-    // Play a notification sound
     val mediaPlayer = MediaPlayer.create(context, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
     mediaPlayer.setOnCompletionListener { mp ->
         mp.release()
@@ -147,7 +144,6 @@ fun playSound(context: Context) {
 }
 
 fun vibrate(context: Context) {
-    // Vibrate the device
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
     vibrator.vibrate(vibrationEffect)
@@ -156,9 +152,16 @@ fun vibrate(context: Context) {
 // Function to stop all scheduled notifications
 fun stopAllNotifications() {
     Log.d(TAG, "Stopping all scheduled notifications...")
-    for ((handler, runnable) in handlerRunnablePairs) {
+    handlerRunnableMap.values.flatten().forEach { (handler, runnable) ->
         handler.removeCallbacks(runnable)
     }
-    handlerRunnablePairs.clear()
-    Log.d(TAG, "All scheduled notifications have been stopped.")
+    handlerRunnableMap.clear()
+
+    activeDialogsMap.values.forEach { dialog ->
+        if (dialog.isShowing) {
+            dialog.dismiss()
+        }
+    }
+    activeDialogsMap.clear()
+    Log.d(TAG, "All scheduled notifications and dialogs have been stopped.")
 }
