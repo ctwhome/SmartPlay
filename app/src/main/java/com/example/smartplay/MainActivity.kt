@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         val batteryPct = level.toFloat() / scale.toFloat()
         // log battery level
         Log.d("Battery Level", "Battery Level: $batteryPct")
-        return "${batteryPct * 100}%"
+        return "${(batteryPct * 100).toInt()}%"
 
     }
 
