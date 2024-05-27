@@ -112,32 +112,48 @@ class SettingsActivity : AppCompatActivity() {
         //
         // Checkboxes for the sensors
         //
+
+        // checkBoxHeartRate
         val checkBoxHeartRate: CheckBox = findViewById(R.id.checkBoxHeartRate)
         checkBoxHeartRate.isChecked = sharedPref.getString("checkBoxHeartRate", "true").toBoolean()
         checkBoxHeartRate.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxHeartRate", isChecked.toString())
         }
+
+        // checkBoxAccelerometer
         val checkBoxAccelerometer: CheckBox = findViewById(R.id.checkBoxAccelerometer)
         checkBoxAccelerometer.isChecked =
             sharedPref.getString("checkBoxAccelerometer", "true").toBoolean()
         checkBoxAccelerometer.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxAccelerometer", isChecked.toString())
         }
+
+        // checkBoxGyroscope
         val checkBoxGyroscope: CheckBox = findViewById(R.id.checkBoxGyroscope)
         checkBoxGyroscope.isChecked = sharedPref.getString("checkBoxGyroscope", "true").toBoolean()
         checkBoxGyroscope.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxGyroscope", isChecked.toString())
         }
+
+        // checkBoxMagnetometer
         val checkBoxMagnetometer: CheckBox = findViewById(R.id.checkBoxMagnetometer)
         checkBoxMagnetometer.isChecked =
             sharedPref.getString("checkBoxMagnetometer", "true").toBoolean()
         checkBoxMagnetometer.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxMagnetometer", isChecked.toString())
         }
+        // checkBoxLocation
         val checkBoxLocation: CheckBox = findViewById(R.id.checkBoxLocation)
         checkBoxLocation.isChecked = sharedPref.getString("checkBoxLocation", "true").toBoolean()
         checkBoxLocation.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxLocation", isChecked.toString())
+        }
+
+        // checkBoxBluetoothProximity
+        val checkBoxBluetoothProximity: CheckBox = findViewById(R.id.checkBoxBluetoothProximity)
+        checkBoxBluetoothProximity.isChecked = sharedPref.getString("checkBoxBluetoothProximity", "true").toBoolean()
+        checkBoxBluetoothProximity.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxBluetoothProximity", isChecked.toString())
         }
     }
 

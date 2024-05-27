@@ -39,6 +39,17 @@ import com.example.smartplay.utils.scheduleCustomDialogs
 import com.example.smartplay.utils.stopAllNotifications
 
 
+// Bluetooth
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
+import android.os.Handler
+import android.os.Looper
+
+
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
     private lateinit var sensorManager: SensorManager
@@ -71,15 +82,20 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private var timestamp: Long = 0
 
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    private lateinit var bluetoothLeScanner: BluetoothLeScanner
+    private val scannedDevices = mutableMapOf<String, Int>()
+    private val scanInterval: Long =
+        1000 // 1 second               // todo get the recording interval from the settings
+    private lateinit var scanHandler: Handler
+    private lateinit var scanRunnable: Runnable
+    private lateinit var csvBtWriter: FileWriter
 
     companion object {
         private lateinit var csvQuestionWriter: FileWriter
 
         fun writeQuestionsToCSV(
-            timestamp: Long,
-            questionID: String,
-            questionText: String,
-            answer: String
+            timestamp: Long, questionID: String, questionText: String, answer: String
         ) {
             try {
                 csvQuestionWriter?.append("$timestamp,$questionID,$questionText,$answer\n")
@@ -95,8 +111,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             csvQuestionWriter = writer
         }
     }
-
-
 
     private val locationListener: LocationListener = LocationListener { location ->
         latitude = location.latitude
@@ -142,6 +156,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             Log.d(TAG, "Permission granted")
         }
 
+
+        // Initialize Bluetooth
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+        bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+        // Check permissions and start scanning
+        checkPermissions()
+
+
+
         startButton.setOnClickListener {
             println("Start button pressed")
             if (!isRecording) {
@@ -159,6 +183,70 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
         }
 
+    }
+
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ), 0
+            )
+        } else {
+            startScanning()
+        }
+    }
+
+    private fun startScanning() {
+        scanHandler = Handler(Looper.getMainLooper())
+        scanRunnable = object : Runnable {
+            override fun run() {
+                bluetoothLeScanner.startScan(null, ScanSettings.Builder().build(), scanCallback)
+                scanHandler.postDelayed({
+                    bluetoothLeScanner.stopScan(scanCallback)
+                    recordBtData()
+                    scanHandler.postDelayed(this, scanInterval)
+                }, scanInterval)
+            }
+        }
+        scanHandler.post(scanRunnable)
+    }
+
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val deviceAddress = result.device.address
+            val rssi = result.rssi
+            scannedDevices[deviceAddress] = rssi
+        }
+    }
+
+    private fun recordBtData() {
+        val timestamp = System.currentTimeMillis()
+        val data = StringBuilder("$timestamp")
+
+        scannedDevices.forEach { (device, rssi) ->
+            data.append(",$device-$rssi")
+        }
+
+        try {
+            csvBtWriter.append(data.toString()).append("\n")
+            csvBtWriter.flush()
+            Log.d(TAG, "Bluetooth data recorded: $data")
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        // Clear scanned devices for the next interval
+        scannedDevices.clear()
     }
 
     //
@@ -183,8 +271,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         scheduleCustomDialogs(workflow, this)
     }
 
-
-
     fun getWatchId(context: Context): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
@@ -197,6 +283,22 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
+        val btFile = File(dir, childId + "_BT_" + watchId + "_" + timestamp + ".csv")
+        try {
+            csvBtWriter = FileWriter(btFile, true)
+            // Write header
+            if (btFile.length() == 0L) {
+                csvBtWriter.append("timestamp").append("\n")
+                csvBtWriter.flush()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        // Start Bluetooth scanning
+        startScanning()
+
         val file = File(dir, childId + "_" + watchId + "_" + timestamp + ".csv")
         val questionFile = File(dir, childId + "_QUESTIONS_" + watchId + "_" + timestamp + ".csv")
         try {
@@ -242,6 +344,14 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         try {
             csvWriter.flush()
             csvWriter.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        scanHandler.removeCallbacks(scanRunnable)
+        try {
+            csvBtWriter.flush()
+            csvBtWriter.close()
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -305,31 +415,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             lastUpdateTime = SystemClock.elapsedRealtime()
         }
     }
-
-//     public fun writeQuestionsToCSV(
-//        timestamp: Long,
-//        questionID: String,
-//        questionText: String,
-//        answer: String
-//    ) {
-//
-//        try {
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-////            CONTINUE HERE THIS IS NOT BEING TRIGGERED
-//
-//            csvQuestionWriter.append("$timestamp,$questionID,$questionText,$answer\n")
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        }
-//    }
 
     private fun writeDataToCSV(
         timestamp: Long,
@@ -423,8 +508,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             super.onBackPressed()
         }
     }
-
-
 
 }
 
