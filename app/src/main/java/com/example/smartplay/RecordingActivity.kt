@@ -395,7 +395,15 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
             val timestamp = System.currentTimeMillis()
             sensorData.setText(
-                "⏱️" + timestamp.toString() + "\n❤️ " + heartRate.toString() + "\n🌍 " + latitude.toString() + " " + longitude.toString() + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString() + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString() + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
+                "⏱️" + timestamp.toString()
+                + "\n❤️ " + heartRate.toString()
+                + "\n🌍 " + latitude.toString()
+                + " "
+                + longitude.toString()
+                + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString()
+                + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString()
+                + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
+                + "\n📡 " + scannedDevices?.toString()
             )
             writeDataToCSV(
                 timestamp,

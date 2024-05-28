@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import com.example.smartplay.R
 import com.example.smartplay.RecordingActivity
 
 data class Question(
@@ -136,12 +137,25 @@ fun showMessageDialog(context: Context, question: Question) {
 
 /* Audio and Vibration */
 fun playSound(context: Context) {
-    val mediaPlayer = MediaPlayer.create(context, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
-    mediaPlayer.setOnCompletionListener { mp ->
-        mp.release()
+    try {
+        Log.d(TAG, "Attempting to play fallback sound")
+        val mediaPlayer = MediaPlayer.create(context, R.raw.fallback_sound) // Ensure fallback_sound is a valid sound file in res/raw
+        if (mediaPlayer == null) {
+            Log.e(TAG, "Fallback MediaPlayer creation failed")
+            return
+        }
+        mediaPlayer.setOnCompletionListener { mp ->
+            Log.d(TAG, "Fallback sound playback completed")
+            mp.release()
+        }
+        mediaPlayer.start()
+        Log.d(TAG, "Fallback sound playback started")
+    } catch (e: Exception) {
+        Log.e("playFallbackSound", "Error playing fallback sound: ${e.message}")
     }
-    mediaPlayer.start()
 }
+
+
 
 fun vibrate(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
