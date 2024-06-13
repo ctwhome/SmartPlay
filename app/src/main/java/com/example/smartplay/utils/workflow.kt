@@ -95,15 +95,14 @@ fun closeActiveDialog(questionId: Int) {
 
 fun showMessageDialog(context: Context, question: Question) {
     // Make sound and vibrate
-    val preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    val checkBoxVibration = preferences.getBoolean("checkBoxVibration", true)
-    if (checkBoxVibration) {
-        Log.d(TAG, "Vibrate")
+    val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+    val checkBoxVibration = sharedPref.getString("checkBoxVibration", "true")
+    if (checkBoxVibration.toBoolean()) {
+        // show value in log of the checkboxVibration
         vibrate(context)
     }
-    val checkBoxSound = preferences.getBoolean("checkBoxSound", true)
-    if (checkBoxSound) {
-        Log.d(TAG, "Play sound")
+    val checkBoxSound = sharedPref.getString("checkBoxSound", "true")
+    if (checkBoxSound.toBoolean()) {
         playSound(context)
     }
 
