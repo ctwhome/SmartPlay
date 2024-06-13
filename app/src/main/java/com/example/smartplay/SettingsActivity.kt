@@ -14,7 +14,6 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.Spinner
 //import android.widget.TimePicker
@@ -108,6 +107,24 @@ class SettingsActivity : AppCompatActivity() {
                 // Another interface callback
             }
         }
+
+        //
+        // Checkboxes for internal settings
+        //
+
+        // checkBoxSound
+        val checkBoxSound: CheckBox = findViewById(R.id.checkBoxSound)
+        checkBoxSound.isChecked = sharedPref.getString("checkBoxSound", "true").toBoolean()
+        checkBoxSound.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxSound", isChecked.toString())
+        }
+
+        val checkBoxVibration: CheckBox = findViewById(R.id.checkBoxVibration)
+        checkBoxVibration.isChecked = sharedPref.getString("checkBoxVibration", "true").toBoolean()
+        checkBoxVibration.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxVibration", isChecked.toString())
+        }
+
 
         //
         // Checkboxes for the sensors

@@ -95,8 +95,18 @@ fun closeActiveDialog(questionId: Int) {
 
 fun showMessageDialog(context: Context, question: Question) {
     // Make sound and vibrate
-    playSound(context)
-    vibrate(context)
+    val preferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val checkBoxVibration = preferences.getBoolean("checkBoxVibration", true)
+    if (checkBoxVibration) {
+        Log.d(TAG, "Vibrate")
+        vibrate(context)
+    }
+    val checkBoxSound = preferences.getBoolean("checkBoxSound", true)
+    if (checkBoxSound) {
+        Log.d(TAG, "Play sound")
+        playSound(context)
+    }
+
     val timestamp = System.currentTimeMillis()
     RecordingActivity.writeQuestionsToCSV(
         timestamp,

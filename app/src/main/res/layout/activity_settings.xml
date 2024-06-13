@@ -73,6 +73,28 @@
                 android:id="@+id/sensorDataText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="Settings" />
+
+            <CheckBox
+                android:id="@+id/checkBoxSound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Sound" />
+
+            <CheckBox
+                android:id="@+id/checkBoxVibration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Vibration" />
+
+            <TextView
+                android:id="@+id/sensorDataText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Include sensor data" />
 
             <CheckBox
