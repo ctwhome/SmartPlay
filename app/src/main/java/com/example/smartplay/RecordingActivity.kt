@@ -85,8 +85,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothLeScanner: BluetoothLeScanner
     private val scannedDevices = mutableMapOf<String, Int>()
-    private val scanInterval: Long =
-        1000 // 1 second               // todo get the recording interval from the settings
     private lateinit var scanHandler: Handler
     private lateinit var scanRunnable: Runnable
     private lateinit var csvBtWriter: FileWriter
@@ -206,7 +204,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
-    private fun startScanning() {
+    private fun startScanning(context: Context = this) {
+
+        val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val frequencyRate = sharedPref.getString("frequencyRate", "1000")?.toLong() ?: 1000
+
         scanHandler = Handler(Looper.getMainLooper())
         scanRunnable = object : Runnable {
             override fun run() {
@@ -214,8 +216,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 scanHandler.postDelayed({
                     bluetoothLeScanner.stopScan(scanCallback)
                     recordBtData()
-                    scanHandler.postDelayed(this, scanInterval)
-                }, scanInterval)
+                    scanHandler.postDelayed(this, frequencyRate.toLong())
+                }, frequencyRate.toLong())
             }
         }
         scanHandler.post(scanRunnable)
