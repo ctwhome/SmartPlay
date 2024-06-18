@@ -54,8 +54,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private lateinit var sensorManager: SensorManager
     private lateinit var locationManager: LocationManager
-    private lateinit var csvWriter: FileWriter
-    private lateinit var csvQuestionWriter: FileWriter
+
+
     private var heartRateSensor: Sensor? = null
     private var accelerometerSensor: Sensor? = null
     private var gyroscopeSensor: Sensor? = null
@@ -80,16 +80,23 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var magnetoY: Float = 0F
     private var magnetoZ: Float = 0F
 
-    private var timestamp: Long = 0
-
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothLeScanner: BluetoothLeScanner
     private val scannedDevices = mutableMapOf<String, Int>()
     private lateinit var scanHandler: Handler
     private lateinit var scanRunnable: Runnable
-    private lateinit var csvBtWriter: FileWriter
 
     private lateinit var audioRecorder: AudioRecorder
+
+    private lateinit var csvWriter: FileWriter
+    private lateinit var csvQuestionWriter: FileWriter
+    private lateinit var csvBTWriter: FileWriter
+
+    // Steps counting
+    private var stepCounterSensor: Sensor? = null
+    private var stepDetectorSensor: Sensor? = null
+    private var totalSteps = 0f
+    private var previousTotalSteps = 0f
 
     companion object {
         private lateinit var csvQuestionWriter: FileWriter
@@ -142,6 +149,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
@@ -246,8 +255,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
 
         try {
-            csvBtWriter.append(data.toString()).append("\n")
-            csvBtWriter.flush()
+            csvBTWriter.append(data.toString()).append("\n")
+            csvBTWriter.flush()
             Log.d(TAG, "Bluetooth data recorded: $data")
         } catch (e: IOException) {
             e.printStackTrace()
@@ -295,11 +304,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val btFile = File(dir, childId + "_BT_" + watchId + "_" + timestamp + ".csv")
 
         try {
-            csvBtWriter = FileWriter(btFile, true)
+            csvBTWriter = FileWriter(btFile, true)
             // Write header
             if (btFile.length() == 0L) {
-                csvBtWriter.append("timestamp").append("\n")
-                csvBtWriter.flush()
+                csvBTWriter
+                    .append("timestamp")
+                    .append("\n")
+                    .flush()
             }
         } catch (e: IOException) {
             e.printStackTrace()
@@ -322,7 +333,29 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
             // If file is empty, write the header columns for the CSV file
             if (file.length() == 0L) {
-                csvWriter.append("timestamp,latitude,longitude,heartRate,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,magnetoX,magnetoY,magnetoZ\n")
+                // Conditional statements to determine which sensors to record
+                val header = StringBuilder("timestamp,")
+                val writeLatitude = sharedPref.getString("checkBoxLatitude", "true")
+                val writeLongitude = sharedPref.getString("checkBoxLongitude", "true")
+                val writeHeartRate = sharedPref.getString("checkBoxHeartRate", "true")
+                val writeAccelerometer = sharedPref.getString("checkBoxAccelerometer", "true")
+                val writeGyroscope = sharedPref.getString("checkBoxGyroscope", "true")
+                val writeMagnetometer = sharedPref.getString("checkBoxMagnetometer", "true")
+                val writeSteps = sharedPref.getString("checkBoxSteps", "true")
+
+                if (writeLatitude.toBoolean()) header.append("latitude,")
+                if (writeLongitude.toBoolean()) header.append("longitude,")
+                if (writeHeartRate.toBoolean()) header.append("heartRate,")
+                if (writeAccelerometer.toBoolean()) header.append("accelX,accelY,accelZ,")
+                if (writeGyroscope.toBoolean()) header.append("gyroX,gyroY,gyroZ,")
+                if (writeMagnetometer.toBoolean()) header.append("magnetoX,magnetoY,magnetoZ,")
+                if (writeSteps.toBoolean()) header.append("steps,")
+
+                // Remove trailing comma and add newline
+                if (header.last() == ',') header.setLength(header.length - 1)
+                header.append("\n")
+
+                csvWriter.append(header.toString())
             }
             if (questionFile.length() == 0L) {
                 csvQuestionWriter.append("timestamp,questionID,questionText,answer\n")
@@ -363,8 +396,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         scanHandler.removeCallbacks(scanRunnable)
         try {
-            csvBtWriter.flush()
-            csvBtWriter.close()
+            csvBTWriter.flush()
+            csvBTWriter.close()
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -405,18 +438,37 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 magnetoY = event.values[1]
                 magnetoZ = event.values[2]
             }
+
+            Sensor.TYPE_STEP_COUNTER -> {
+                totalSteps = event.values[0]
+                val currentSteps = totalSteps - previousTotalSteps
+                previousTotalSteps = totalSteps
+                Log.d(TAG, "Steps: $currentSteps")
+            }
+
+            Sensor.TYPE_STEP_DETECTOR -> {
+                Log.d(TAG, "Step detected!")
+            }
         }
 
 
-        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) {
+        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) { // TODO is this the frequency? the 1000
 
             // Write the sensor data on the screen
             val sensorData = findViewById<TextView>(R.id.sensorData)
 
             val timestamp = System.currentTimeMillis()
-            sensorData.setText(
-                "⏱️" + timestamp.toString() + "\n❤️ " + heartRate.toString() + "\n🌍 " + latitude.toString() + " " + longitude.toString() + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString() + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString() + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString() + "\n📡 " + scannedDevices?.toString()
-            )
+            sensorData.text = """
+            ⏱️$timestamp
+            ❤️ $heartRate
+            🌍 $latitude $longitude
+            🧭 $magnetoX $magnetoY $magnetoZ
+            🔀 $gyroX $gyroY $gyroZ
+            🏎️ $accelX $accelY $accelZ
+            👣 $totalSteps
+            📡 ${scannedDevices.toString()}
+        """.trimIndent()
+
             writeDataToCSV(
                 timestamp,
                 latitude,
@@ -431,6 +483,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 gyroX,
                 gyroY,
                 gyroZ,
+                totalSteps
             )
             lastUpdateTime = SystemClock.elapsedRealtime()
         }
@@ -449,10 +502,35 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         gyroZ: Float? = null,
         magnetoX: Float? = null,
         magnetoY: Float? = null,
-        magnetoZ: Float? = null
+        magnetoZ: Float? = null,
+        steps: Float? = null
     ) {
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
+        val writeLatitude = sharedPref.getString("checkBoxLatitude", "true")
+        val writeLongitude = sharedPref.getString("checkBoxLongitude", "true")
+        val writeHeartRate = sharedPref.getString("checkBoxHeartRate", "true")
+        val writeAccelerometer = sharedPref.getString("checkBoxAccelerometer", "true")
+        val writeGyroscope = sharedPref.getString("checkBoxGyroscope", "true")
+        val writeMagnetometer = sharedPref.getString("checkBoxMagnetometer", "true")
+        val writeSteps = sharedPref.getString("checkBoxSteps", "true")
+
+        val data = StringBuilder("$timestamp,")
+        if (writeLatitude.toBoolean()) data.append("$latitude,")
+        if (writeLongitude.toBoolean()) data.append("$longitude,")
+        if (writeHeartRate.toBoolean()) data.append("$heartRate,")
+        if (writeAccelerometer.toBoolean()) data.append("$accelX,$accelY,$accelZ,")
+        if (writeGyroscope.toBoolean()) data.append("$gyroX,$gyroY,$gyroZ,")
+        if (writeMagnetometer.toBoolean()) data.append("$magnetoX,$magnetoY,$magnetoZ,")
+        if (writeSteps.toBoolean()) data.append("$steps,")
+
+        // Remove trailing comma and add newline
+        if (data.last() == ',') data.setLength(data.length - 1)
+        data.append("\n")
+
         try {
-            csvWriter.append("$timestamp,$latitude,$longitude,$heartRate,$accelX,$accelY,$accelZ,$gyroX,$gyroY,$gyroZ,$magnetoX,$magnetoY,$magnetoZ\n")
+//            csvWriter.append("$timestamp,$latitude,$longitude,$heartRate,$accelX,$accelY,$accelZ,$gyroX,$gyroY,$gyroZ,$magnetoX,$magnetoY,$magnetoZ,$steps\n")
+            csvWriter.append(data.toString())
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -466,9 +544,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         if (isRecording) {
             latitude = location.latitude
             longitude = location.longitude
-
-//            val timestamp = System.currentTimeMillis()
-//            writeDataToCSV(timestamp, latitude = location.latitude, longitude = location.longitude)
         }
     }
 

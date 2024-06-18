@@ -26,6 +26,8 @@
     <!-- Audio permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
+    <!-- Steps counting -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
     <application
         android:allowBackup="true"

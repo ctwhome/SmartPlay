@@ -102,7 +102,6 @@ class SettingsActivity : AppCompatActivity() {
                     "selectedWorkflow", parent.getItemAtPosition(position).toString()
                 )
             }
-
             override fun onNothingSelected(parent: AdapterView<*>) {
                 // Another interface callback
             }
@@ -125,7 +124,6 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences("checkBoxVibration", isChecked.toString())
         }
 
-
         //
         // Checkboxes for the sensors
         //
@@ -135,13 +133,6 @@ class SettingsActivity : AppCompatActivity() {
         checkBoxAudioRecording.isChecked = sharedPref.getString("checkBoxAudioRecording", "true").toBoolean()
         checkBoxAudioRecording.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxAudioRecording", isChecked.toString())
-        }
-
-        // checkBoxDBLevel
-        val checkBoxDBLevel: CheckBox = findViewById(R.id.checkBoxDBLevel)
-        checkBoxDBLevel.isChecked = sharedPref.getString("checkBoxDBLevel", "true").toBoolean()
-        checkBoxDBLevel.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
-            saveToSharedPreferences("checkBoxDBLevel", isChecked.toString())
         }
 
         // checkBoxSteps
