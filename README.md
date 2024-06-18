@@ -20,6 +20,9 @@ Path to getting the data from the device:
 ![Screenshot 2023-07-24 at 21 50 14](https://github.com/ctwhome/SmartPlay/assets/4195550/cfc87b19-d0e8-41cc-ba41-6c2abad2a9c8)
 
 
+## Privacy
+The generated files are stored in the internal storage of the app's private directory, which is not directly accessible via the SD card or other file explorer apps unless your device is rooted.
+
 ## 🛜 Connecting the smartwatch via Wifi Debugging
 I couldn't make the installation of the application work via usb cable, but yes over wifi debugging.
 

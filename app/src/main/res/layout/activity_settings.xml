@@ -70,7 +70,7 @@
                 android:text="Start recording" />
 
             <TextView
-                android:id="@+id/sensorDataText"
+                android:id="@+id/settingsDataText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Settings" />
@@ -97,6 +97,34 @@
                 android:layout_height="wrap_content"
                 android:text="Include sensor data" />
 
+<!--            Audio recording -->
+            <CheckBox
+                android:id="@+id/checkBoxAudioRecording"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Record Audio" />
+
+<!--            dB Recording -->
+            <CheckBox
+                android:id="@+id/checkBoxDBLevel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="dB audio level" />
+
+<!--            Steps Counting recording-->
+            <CheckBox
+                android:id="@+id/checkBoxSteps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Steps" />
+
+<!--            Heart Rate Recording -->
             <CheckBox
                 android:id="@+id/checkBoxHeartRate"
                 android:layout_width="wrap_content"
@@ -135,7 +163,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="true"
-                android:text="Location" />
+                android:text="GPS Location" />
 
             <CheckBox
                 android:id="@+id/checkBoxBluetoothProximity"

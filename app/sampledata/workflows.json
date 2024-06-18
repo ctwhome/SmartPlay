@@ -1,7 +1,37 @@
 [
   {
     "workflow_name": "Workflow 1 test",
+        "list_of_sensors": [gps,magn, acc,... ]
     "questions": [
+
+      {
+        "question_id": 10,
+        "question_title": "Based on sensor",
+        "answers": [
+          "👍",
+          "🤢",
+          "🤷‍♀️"
+        ],
+
+        // retrieve previous X minutes
+        "sensor": "heart-rate-variablity", //gps,magn, acc,...
+        "retrieval_time_in_minutes": 10,
+        "max_threashold": 120,
+        "min_threashold": 50,
+
+
+        // Possibilities (4 to 12 years old)
+        //
+        // location: are they in a place mostly, or they are moving... or something else
+        // movement - how quiet or fast they move
+        // are they alone (social contact)
+
+        // are they in a noisy environment - (external sound level) -  microphone sensor
+
+        // heart-rate-variablity
+        // stress level indicator - feelings indicator ()
+
+      },
       {
         "question_id": 1,
         "question_title": "How do you feel?",

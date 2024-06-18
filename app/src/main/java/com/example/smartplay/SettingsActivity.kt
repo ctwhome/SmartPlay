@@ -130,6 +130,27 @@ class SettingsActivity : AppCompatActivity() {
         // Checkboxes for the sensors
         //
 
+        // checkBoxAudioRecording
+        val checkBoxAudioRecording: CheckBox = findViewById(R.id.checkBoxAudioRecording)
+        checkBoxAudioRecording.isChecked = sharedPref.getString("checkBoxAudioRecording", "true").toBoolean()
+        checkBoxAudioRecording.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxAudioRecording", isChecked.toString())
+        }
+
+        // checkBoxDBLevel
+        val checkBoxDBLevel: CheckBox = findViewById(R.id.checkBoxDBLevel)
+        checkBoxDBLevel.isChecked = sharedPref.getString("checkBoxDBLevel", "true").toBoolean()
+        checkBoxDBLevel.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxDBLevel", isChecked.toString())
+        }
+
+        // checkBoxSteps
+        val checkBoxSteps: CheckBox = findViewById(R.id.checkBoxSteps)
+        checkBoxSteps.isChecked = sharedPref.getString("checkBoxSteps", "true").toBoolean()
+        checkBoxSteps.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
+            saveToSharedPreferences("checkBoxSteps", isChecked.toString())
+        }
+
         // checkBoxHeartRate
         val checkBoxHeartRate: CheckBox = findViewById(R.id.checkBoxHeartRate)
         checkBoxHeartRate.isChecked = sharedPref.getString("checkBoxHeartRate", "true").toBoolean()

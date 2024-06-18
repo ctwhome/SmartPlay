@@ -1,5 +1,6 @@
 package com.example.smartplay
 
+import AudioRecorder
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
@@ -89,6 +90,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private lateinit var scanRunnable: Runnable
     private lateinit var csvBtWriter: FileWriter
 
+    private lateinit var audioRecorder: AudioRecorder
+
     companion object {
         private lateinit var csvQuestionWriter: FileWriter
 
@@ -128,9 +131,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         // Keep this activity in focus
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
 
+        audioRecorder = AudioRecorder(this)
         // Initialize the sensors and location
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
@@ -196,7 +201,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 this, arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
                 ), 0
             )
         } else {
@@ -282,11 +289,12 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-
         val btFile = File(dir, childId + "_BT_" + watchId + "_" + timestamp + ".csv")
+
         try {
             csvBtWriter = FileWriter(btFile, true)
             // Write header
@@ -300,6 +308,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         // Start Bluetooth scanning
         startScanning()
+
+        // Record audio
+        if (checkBoxAudioRecording.toBoolean()) {
+            audioRecorder.startRecording()
+        }
 
         val file = File(dir, childId + "_" + watchId + "_" + timestamp + ".csv")
         val questionFile = File(dir, childId + "_QUESTIONS_" + watchId + "_" + timestamp + ".csv")
@@ -332,7 +345,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             locationManager.requestLocationUpdates(provider, 1000, 1f, this)
         }
 
-
         // Initialize the workflow questions
         initWorkflowQuestions()
 
@@ -357,9 +369,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         } catch (e: IOException) {
             e.printStackTrace()
         }
+
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
+        // Stop audio recording
+        if (checkBoxAudioRecording.toBoolean()) {
+
+            audioRecorder.stopRecording()
+        }
     }
 
-    @SuppressLint("SuspiciousIndentation")
     override fun onSensorChanged(event: SensorEvent) {
 
         when (event.sensor.type) {
@@ -397,15 +416,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
             val timestamp = System.currentTimeMillis()
             sensorData.setText(
-                "⏱️" + timestamp.toString()
-                + "\n❤️ " + heartRate.toString()
-                + "\n🌍 " + latitude.toString()
-                + " "
-                + longitude.toString()
-                + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString()
-                + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString()
-                + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString()
-                + "\n📡 " + scannedDevices?.toString()
+                "⏱️" + timestamp.toString() + "\n❤️ " + heartRate.toString() + "\n🌍 " + latitude.toString() + " " + longitude.toString() + "\n🧭 " + magnetoX.toString() + " " + magnetoY.toString() + " " + magnetoZ.toString() + "\n🔀 " + gyroX.toString() + " " + gyroY.toString() + " " + gyroZ.toString() + "\n🏎️ " + accelX.toString() + " " + accelY.toString() + " " + accelZ.toString() + "\n📡 " + scannedDevices?.toString()
             )
             writeDataToCSV(
                 timestamp,
@@ -488,6 +499,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        audioRecorder.handlePermissionsResult(requestCode, grantResults)
+
         when (requestCode) {
             0 -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
