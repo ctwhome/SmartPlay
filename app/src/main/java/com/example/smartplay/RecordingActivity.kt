@@ -2,7 +2,6 @@ package com.example.smartplay
 
 import AudioRecorder
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
@@ -314,7 +313,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             audioRecorder.startRecording()
         }
 
-        val file = File(dir, childId + "_" + watchId + "_" + timestamp + ".csv")
+        val file = File(dir, childId + "_SENSORS_" + watchId + "_" + timestamp + ".csv")
         val questionFile = File(dir, childId + "_QUESTIONS_" + watchId + "_" + timestamp + ".csv")
         try {
             csvWriter = FileWriter(file, true)

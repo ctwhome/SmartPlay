@@ -19,6 +19,21 @@ adb -s <device_id> install -r /path/to/your/app-debug.apk
 Path to getting the data from the device:
 ![Screenshot 2023-07-24 at 21 50 14](https://github.com/ctwhome/SmartPlay/assets/4195550/cfc87b19-d0e8-41cc-ba41-6c2abad2a9c8)
 
+## Recording files
+When a recording session is completed, several files are generated and saved in the Documents directory. The files are named using the format [user_id]_[type]_[device_id]_[timestamp]. 
+
+Here's a brief description of each part of the filename:
+
+- user_id: The number identifier of the user set in the setting screen.
+- type: The type of data contained in the file. This can be:
+  - SENSORS for the array of sensors collected.
+  - AUDIO for audio recordings.
+  - BT for Bluetooth scan data.
+  - QUESTIONS for responses to workflow questions.
+- device_id: A unique identifier for the device, such as faaab8a5585c9531 in the example.
+- timestamp: The exact time when the recording was made, ensuring each file has a unique identifier.
+
+For example, a filename like 1_AUDIO_faaab8a5585c9531_1717009923893.3gp indicates an audio recording for user 1, captured by device faaab8a5585c9531 at the timestamp 1717009923893.
 
 ## Privacy
 The generated files are stored in the internal storage of the app's private directory, which is not directly accessible via the SD card or other file explorer apps unless your device is rooted.

@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Environment
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -19,12 +18,11 @@ class AudioRecorder(private val activity: Activity) {
     var isRecording = false
         private set
 
-    private val fileName: String
-        get() = activity.getFileStreamPath("audio.3gp").absolutePath
+    private lateinit var audioFile: File
 
-//    fun getWatchId(context: Context): String {
-//        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-//    }
+    private fun getWatchId(context: Context): String {
+        return android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+    }
 
     fun startRecording() {
         if (ActivityCompat.checkSelfPermission(
@@ -43,22 +41,22 @@ class AudioRecorder(private val activity: Activity) {
             return
         }
 
-//        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-//        val childId = sharedPref.getString("idChild", "000")
-//        val timestamp = System.currentTimeMillis()
-//        val watchId = getWatchId(this)
-//        val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-//        val audioFile = File(dir, childId + "_AUDIO_" + watchId + "_" + timestamp + ".3gp")
+        val sharedPref = activity.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val childId = sharedPref.getString("idChild", "000") ?: "000"
+        val timestamp = System.currentTimeMillis()
+        val watchId = getWatchId(activity)
+        val dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        audioFile = File(dir, "${childId}_AUDIO_${watchId}_${timestamp}.3gp")
 
         mediaRecorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setOutputFile(fileName)
+            setOutputFile(audioFile.absolutePath)
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
             try {
                 prepare()
-                Log.d(ContentValues.TAG, "MediaRecorder prepared successfully, file: $fileName")
+                Log.d(ContentValues.TAG, "MediaRecorder prepared successfully, file: ${audioFile.absolutePath}")
             } catch (e: IOException) {
                 Toast.makeText(activity, "Prepare failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.e(ContentValues.TAG, "Prepare failed: ${e.message}")
@@ -94,8 +92,8 @@ class AudioRecorder(private val activity: Activity) {
         mediaRecorder = null
         isRecording = false
         Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
-        Log.d(ContentValues.TAG, "Audio file saved: $fileName")
-        return fileName
+        Log.d(ContentValues.TAG, "Audio file saved: ${audioFile.absolutePath}")
+        return audioFile.absolutePath
     }
 
     fun handlePermissionsResult(requestCode: Int, grantResults: IntArray) {
