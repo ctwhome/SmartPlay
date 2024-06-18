@@ -134,7 +134,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         supportActionBar?.hide() // Hide the action bar
 
 
-        // Keep this activity in focus
+        // Keep this activity in focus   // TODO
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
 
@@ -194,6 +194,15 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
         }
 
+        // Check permissions and start scanning
+        checkPermissions()
+
+        // Start recording immediately when the activity is created
+        startRecording()
+
+        // Set initial visibility of buttons based on recording state
+        startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
+        stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
     }
 
     private fun checkPermissions() {
@@ -293,7 +302,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     }
 
     private fun startRecording() {
-        checkPermission()
+//        checkPermission()
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")

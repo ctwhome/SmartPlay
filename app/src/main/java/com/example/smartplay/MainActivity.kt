@@ -27,6 +27,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Create an Intent to start SettingsActivity
+        val intent = Intent(this, SettingsActivity::class.java)
+        startActivity(intent)
+
+        // Finish MainActivity so it's not on the back stack
+        finish()
+
+        return
         supportActionBar?.hide() // Hide the action bar
 
         val buttonOpenSecondActivity: Button = findViewById(R.id.button_enter_password)

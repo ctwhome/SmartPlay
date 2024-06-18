@@ -3,6 +3,8 @@ package com.example.smartplay
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Environment
 import android.text.Editable
@@ -16,6 +18,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
+import android.widget.TextView
 //import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
 import com.example.smartplay.utils.Workflow
@@ -24,13 +27,40 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 class SettingsActivity : AppCompatActivity() {
+    //    show battery level in the @+id/batteryLevel field
+    fun showBatteryLevel() {
+        val batteryLevel = getBatteryLevel()
+        findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
+
+    }
+
+    private fun getBatteryLevel(): String {
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+            applicationContext.registerReceiver(null, ifilter)
+        }
+        val level: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+
+        val batteryPct = level.toFloat() / scale.toFloat()
+        // log battery level
+        Log.d("Battery Level", "Battery Level: $batteryPct")
+        return "${(batteryPct * 100).toInt()}%"
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showBatteryLevel()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
         supportActionBar?.hide() // Hide the action bar
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
+
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         readFileFromSDCard()
         // Button Record
         val buttonRecordingActivity: Button = findViewById(R.id.button_record)
