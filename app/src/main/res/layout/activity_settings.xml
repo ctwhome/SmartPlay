@@ -15,63 +15,64 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <!-- Text View -->
-            <TextView
-                android:id="@+id/text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:padding="12pt"
-                android:rotationX="26"
-                android:rotationY="22"
-
-                android:text="⭐️ Smart Play!" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
 
-            <!-- Version Text View -->
-            <TextView
-                android:id="@+id/version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="12dp"
-                android:text="V 0.11 - 18-06-2024" />
+                <!-- Text View -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal">
-                <!-- Battery Level -->
+                    <!-- Version Text View -->
+                    <TextView
+                        android:id="@+id/version"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="V 0.12 - 20-06-2024"
+                        android:textSize="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+                        <!-- Battery Level -->
+                        <TextView
+                            android:id="@+id/batteryLevelTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="🔋" />
+                        <!-- Battery Level -->
+                        <TextView
+                            android:id="@+id/batteryLevel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="100%" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
                 <TextView
-                    android:id="@+id/batteryLevelTitle"
+                    android:id="@+id/text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="🔋" />
-                <!-- Battery Level -->
-                <TextView
-                    android:id="@+id/batteryLevel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="100%" />
+                    android:padding="12pt"
+                    android:rotationX="26"
+                    android:rotationY="22"
+
+                    android:text="⭐️ Smart Play!" />
 
             </LinearLayout>
-
-        </LinearLayout>
-        </LinearLayout>
 
             <TextView
                 android:id="@+id/settings_text"
@@ -97,7 +98,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="001"
-                    android:inputType="number" />
+                    android:inputType="numberSigned"
+                    android:text="1" />
             </LinearLayout>
 
             <TextView
@@ -126,7 +128,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="1000"
-                    android:inputType="number" />
+                    android:inputType="number"
+                    android:text="1000" />
             </LinearLayout>
 
             <Button
@@ -135,6 +138,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="Start recording" />
+
+            <!-- Close App Button -->
+            <Button
+                android:id="@+id/closeAppButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Close App" />
 
             <TextView
                 android:id="@+id/settingsDataText"
@@ -316,6 +327,8 @@
             <Space
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+
+
 
             <!--            <LinearLayout-->
             <!--                android:layout_width="match_parent"-->

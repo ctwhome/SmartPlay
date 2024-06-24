@@ -1,11 +1,11 @@
-// AudioRecorder.kt
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Environment
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -18,10 +18,10 @@ class AudioRecorder(private val activity: Activity) {
     var isRecording = false
         private set
 
-    private lateinit var audioFile: File
+    private lateinit var outputFilePath: String
 
-    private fun getWatchId(context: Context): String {
-        return android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+    fun getWatchId(context: Context): String {
+        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
 
     fun startRecording() {
@@ -31,7 +31,7 @@ class AudioRecorder(private val activity: Activity) {
                 activity, Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.d(ContentValues.TAG, "Requesting permission")
+            Log.d(TAG, "Requesting permission")
             ActivityCompat.requestPermissions(
                 activity, arrayOf(
                     Manifest.permission.RECORD_AUDIO,
@@ -42,33 +42,34 @@ class AudioRecorder(private val activity: Activity) {
         }
 
         val sharedPref = activity.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val childId = sharedPref.getString("idChild", "000") ?: "000"
+        val childId = sharedPref.getString("idChild", "000")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(activity)
         val dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        audioFile = File(dir, "${childId}_AUDIO_${watchId}_${timestamp}.3gp")
+        val audioFile = File(dir, "${childId}_AUDIO_${watchId}_${timestamp}.3gp")
+        outputFilePath = audioFile.absolutePath
 
         mediaRecorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setOutputFile(audioFile.absolutePath)
+            setOutputFile(outputFilePath)
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
             try {
                 prepare()
-                Log.d(ContentValues.TAG, "MediaRecorder prepared successfully, file: ${audioFile.absolutePath}")
+                Log.d(TAG, "MediaRecorder prepared successfully, file: $outputFilePath")
             } catch (e: IOException) {
                 Toast.makeText(activity, "Prepare failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                Log.e(ContentValues.TAG, "Prepare failed: ${e.message}")
+                Log.e(TAG, "Prepare failed: ${e.message}")
                 return
             }
 
             try {
                 start()
-                Log.d(ContentValues.TAG, "Recording started")
+                Log.d(TAG, "Recording started")
             } catch (e: IllegalStateException) {
                 Toast.makeText(activity, "Start failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                Log.e(ContentValues.TAG, "Start failed: ${e.message}")
+                Log.e(TAG, "Start failed: ${e.message}")
                 return
             }
         }
@@ -77,23 +78,29 @@ class AudioRecorder(private val activity: Activity) {
     }
 
     fun stopRecording(): String? {
-        mediaRecorder?.apply {
-            try {
-                stop()
-                Log.d(ContentValues.TAG, "Recording stopped")
-            } catch (e: RuntimeException) {
-                Log.e(ContentValues.TAG, "Stop failed: ${e.message}")
-                Toast.makeText(activity, "Stop failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                return null
-            }
-            release()
-            Log.d(ContentValues.TAG, "MediaRecorder released")
+        if (mediaRecorder == null) {
+            Log.e(TAG, "MediaRecorder is null")
+            return null
         }
-        mediaRecorder = null
+
+        try {
+            mediaRecorder?.apply {
+                stop()
+                Log.d(TAG, "Recording stopped")
+            }
+        } catch (e: RuntimeException) {
+            Log.e(TAG, "Stop failed: ${e.message}")
+            Toast.makeText(activity, "Stop failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            return null
+        } finally {
+            mediaRecorder?.release()
+            mediaRecorder = null
+        }
+
         isRecording = false
         Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
-        Log.d(ContentValues.TAG, "Audio file saved: ${audioFile.absolutePath}")
-        return audioFile.absolutePath
+        Log.d(TAG, "Audio file saved: $outputFilePath")
+        return outputFilePath
     }
 
     fun handlePermissionsResult(requestCode: Int, grantResults: IntArray) {

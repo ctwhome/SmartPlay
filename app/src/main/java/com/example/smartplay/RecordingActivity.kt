@@ -46,9 +46,14 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
-
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.View
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
@@ -98,6 +103,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var totalSteps = 0f
     private var previousTotalSteps = 0f
 
+    private lateinit var gestureDetector: GestureDetector
+
     companion object {
         private lateinit var csvQuestionWriter: FileWriter
 
@@ -133,10 +140,21 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         supportActionBar?.hide() // Hide the action bar
 
+        // Initialize GestureDetector
+        gestureDetector = GestureDetector(this, GestureListener())
+
+        // Set touch listener to detect swipe gestures
+        val rootView = findViewById<View>(android.R.id.content)
+        rootView.setOnTouchListener { v, event ->
+            gestureDetector.onTouchEvent(event)
+            true
+        }
 
         // Keep this activity in focus   // TODO
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        // Check permissions and start scanning
+        checkPermissions()
 
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
@@ -172,9 +190,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-        // Check permissions and start scanning
-        checkPermissions()
-
 
 
         startButton.setOnClickListener {
@@ -194,8 +209,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
         }
 
-        // Check permissions and start scanning
-        checkPermissions()
 
         // Start recording immediately when the activity is created
         startRecording()
@@ -203,6 +216,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         // Set initial visibility of buttons based on recording state
         startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
         stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
+
+
+        // Set secure flag to prevent recent apps view
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE
+        )
+
+        // Start the foreground service
+        val serviceIntent = Intent(this, ForegroundService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
     }
 
     private fun checkPermissions() {
@@ -220,7 +243,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                     Manifest.permission.BLUETOOTH_SCAN,
                     Manifest.permission.BLUETOOTH_CONNECT,
                     Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    // permisions required higher versions
+//                    Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+//                    Manifest.permission.BODY_SENSORS_BACKGROUND,
+
                 ), 0
             )
         } else {
@@ -282,6 +309,12 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         val workflowString = sharedData.getString("workflowFile", "")
+
+        // if no workflows file  or empty, return
+        if (workflowString.isNullOrEmpty()) {
+            return
+        }
+
         // cast the json file to a Workflow object
 
         val gson = Gson()
@@ -291,10 +324,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         Log.d(TAG, "Selected Workflow Name: $selectedWorkflowName")
 
-        val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
-        // parse the json file workflowFile
-        // Log.d(TAG, "workflow!!!!!!!!!!!!!!!!!!: $workflow")
-        scheduleCustomDialogs(workflow, this)
+        if (workflows.isNotEmpty()) {
+            // Access the first element: myList[0]
+            val workflow =
+                workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
+            // parse the json file workflowFile
+            scheduleCustomDialogs(workflow, this)
+        } else {
+            // Handle the case where the list is empty
+            return
+        }
     }
 
     fun getWatchId(context: Context): String {
@@ -306,7 +345,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
         val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -316,10 +355,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             csvBTWriter = FileWriter(btFile, true)
             // Write header
             if (btFile.length() == 0L) {
-                csvBTWriter
-                    .append("timestamp")
-                    .append("\n")
-                    .flush()
+                csvBTWriter.append("timestamp").append("\n").flush()
             }
         } catch (e: IOException) {
             e.printStackTrace()
@@ -602,19 +638,125 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (isRecording) {
-            val builder = AlertDialog.Builder(this)
-            builder.setMessage("Recording in progress. Do you really want to leave?")
-                .setCancelable(false).setPositiveButton("Yes") { _, _ -> super.onBackPressed() }
-                .setNegativeButton("No", null)
-            val alert = builder.create()
-            alert.show()
-        } else {
-            super.onBackPressed()
+//    @Deprecated("Deprecated in Java")
+//    override fun onBackPressed() {
+//            val intent = Intent(this, PasswordActivity::class.java)
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+//            startActivity(intent)
+//
+////        showExitDialog()
+//    }
+
+
+    // Custom GestureListener to detect swipe gestures
+    inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
+        private val SWIPE_THRESHOLD = 100
+        private val SWIPE_VELOCITY_THRESHOLD = 100
+
+        override fun onFling(
+            e1: MotionEvent,
+            e2: MotionEvent,
+            velocityX: Float,
+            velocityY: Float
+        ): Boolean {
+            if (e1 == null || e2 == null) return false
+            val diffY = e2.y - e1.y
+            val diffX = e2.x - e1.x
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        // Swipe Right
+                        onSwipeRight()
+                    } else {
+                        // Swipe Left
+                        onSwipeLeft()
+                    }
+                    return true
+                }
+            }
+            return false
         }
     }
+
+    private fun onSwipeLeft() {
+        showExitDialog()
+    }
+
+    private fun onSwipeRight() {
+        showExitDialog()
+        // Optional: Implement if needed
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        showExitDialog()
+    }
+
+//    override fun onUserLeaveHint() {
+//        super.onUserLeaveHint()
+//        showExitDialog()
+//    }
+
+//    override fun onPause() {
+//        super.onPause()
+//        if (!isChangingConfigurations) {
+//            showExitDialog()
+//        }
+//    }
+
+//    override fun onStop() {
+//        super.onStop()
+//            showExitDialog()
+////        if (!isChangingConfigurations) {
+////        }
+//    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            showExitDialog()
+        }
+    }
+
+    private fun showExitDialog() {
+        val builder = AlertDialog.Builder(this)
+        val inflater = layoutInflater
+        val dialogLayout = inflater.inflate(R.layout.dialog_password, null)
+        val editText = dialogLayout.findViewById<EditText>(R.id.passwordEditText)
+
+        builder.apply {
+            setTitle("Enter Password")
+            setView(dialogLayout)
+            setPositiveButton("OK") { dialog, _ ->
+                val enteredPassword = editText.text.toString()
+                val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+                val correctPassword =
+                    sharedPref.getString("appPassword", "1234")  // Default password set to "1234"
+
+                if (enteredPassword == correctPassword) {
+                    dialog.dismiss()
+                    val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
+                    startActivity(intent)
+                    stopRecording()
+
+                    finish()  // Optionally, finish the current activity if you don't want to return to it.
+                } else {
+                    Toast.makeText(this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            show()
+        }
+
+        // Request focus and show the keyboard
+        editText.requestFocus()
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
 
 }
 

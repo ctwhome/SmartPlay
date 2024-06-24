@@ -44,6 +44,7 @@ class PasswordActivity : AppCompatActivity() {
                 if (enteredPassword == correctPassword) {
                     val intent = Intent(this, SettingsActivity::class.java)
                     startActivity(intent)
+                    finish()
                 }
             }
         }

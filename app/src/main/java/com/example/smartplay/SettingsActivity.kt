@@ -67,6 +67,17 @@ class SettingsActivity : AppCompatActivity() {
         buttonRecordingActivity.setOnClickListener {
             val intent = Intent(this@SettingsActivity, RecordingActivity::class.java)
             startActivity(intent)
+            // kill the activity
+//            finish()
+        }
+
+
+        // Find the close app button by its ID
+        val closeAppButton: Button = findViewById(R.id.closeAppButton)
+        // Set a click listener for the button
+        closeAppButton.setOnClickListener {
+            // terminate the app when the button is clicked
+            finish()
         }
 
         //
@@ -256,7 +267,7 @@ class SettingsActivity : AppCompatActivity() {
         // check if the file exists
         if (!File(path).exists()) {
             Log.d(TAG, "File does not exist")
-            return emptyList()
+            return listOf("No workflows file")
         }
         // log the file content
         saveToSharedPreferences("workflowFile", File(path).readText())
