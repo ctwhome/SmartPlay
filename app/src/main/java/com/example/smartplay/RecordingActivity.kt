@@ -57,9 +57,11 @@ import android.view.View
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
+    private lateinit var startButton: Button
+    private lateinit var stopButton: Button
+
     private lateinit var sensorManager: SensorManager
     private lateinit var locationManager: LocationManager
-
 
     private var heartRateSensor: Sensor? = null
     private var accelerometerSensor: Sensor? = null
@@ -131,24 +133,15 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         longitude = location.longitude
     }
 
-    private fun hasGps(): Boolean =
-        packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.recording_activity)
 
         supportActionBar?.hide() // Hide the action bar
 
-        // Initialize GestureDetector
-        gestureDetector = GestureDetector(this, GestureListener())
+        startButton = findViewById(R.id.startButton)
+        stopButton = findViewById(R.id.stopButton)
 
-        // Set touch listener to detect swipe gestures
-        val rootView = findViewById<View>(android.R.id.content)
-        rootView.setOnTouchListener { v, event ->
-            gestureDetector.onTouchEvent(event)
-            true
-        }
 
         // Keep this activity in focus   // TODO
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -156,8 +149,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         // Check permissions and start scanning
         checkPermissions()
 
-        val startButton = findViewById<Button>(R.id.startButton)
-        val stopButton = findViewById<Button>(R.id.stopButton)
+
 
         audioRecorder = AudioRecorder(this)
         // Initialize the sensors and location
@@ -203,9 +195,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         stopButton.setOnClickListener {
             if (isRecording) {
-                startButton.visibility = Button.VISIBLE
-                stopButton.visibility = Button.GONE
-                stopRecording()
+                // open password dialog
+                showExitDialog()
             }
         }
 
@@ -216,9 +207,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         // Set initial visibility of buttons based on recording state
         startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
         stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
-
-
         // Set secure flag to prevent recent apps view
+
+
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE
         )
@@ -654,10 +645,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         private val SWIPE_VELOCITY_THRESHOLD = 100
 
         override fun onFling(
-            e1: MotionEvent,
-            e2: MotionEvent,
-            velocityX: Float,
-            velocityY: Float
+            e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float
         ): Boolean {
             if (e1 == null || e2 == null) return false
             val diffY = e2.y - e1.y
@@ -720,42 +708,52 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     private fun showExitDialog() {
         val builder = AlertDialog.Builder(this)
-        val inflater = layoutInflater
-        val dialogLayout = inflater.inflate(R.layout.dialog_password, null)
-        val editText = dialogLayout.findViewById<EditText>(R.id.passwordEditText)
+        val editText = EditText(this)
+        editText.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        editText.hint = "Enter Password"
 
         builder.apply {
             setTitle("Enter Password")
-            setView(dialogLayout)
-            setPositiveButton("OK") { dialog, _ ->
-                val enteredPassword = editText.text.toString()
-                val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-                val correctPassword =
-                    sharedPref.getString("appPassword", "1234")  // Default password set to "1234"
+            setView(editText)
+            setCancelable(false) // Prevents dialog from being dismissed without interaction
 
-                if (enteredPassword == correctPassword) {
-                    dialog.dismiss()
-                    val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
-                    startActivity(intent)
-                    stopRecording()
+            val dialog = create()
+            dialog.show()
 
-                    finish()  // Optionally, finish the current activity if you don't want to return to it.
+            // Request focus and show the keyboard
+            editText.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+
+            editText.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                    val enteredPassword = editText.text.toString()
+                    val correctPassword = "2211"
+
+                    if (enteredPassword == correctPassword) {
+                        val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
+                        startActivity(intent)
+
+                        startButton.visibility = Button.VISIBLE
+                        stopButton.visibility = Button.GONE
+                        stopRecording()
+                        dialog.dismiss()
+                        finish()  // Finish the current activity if you don't want to return to it.
+                    } else {
+                        Toast.makeText(this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT).show()
+                        // close dialog
+                        dialog.dismiss()
+                    }
+                    true
                 } else {
-                    Toast.makeText(this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT)
-                        .show()
+                    false
                 }
             }
-            setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            show()
         }
-
-        // Request focus and show the keyboard
-        editText.requestFocus()
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-        imm?.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
     }
+
+
+
 
 
 }
