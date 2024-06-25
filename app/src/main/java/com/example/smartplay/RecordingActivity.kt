@@ -485,20 +485,21 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 val currentSteps = steps + previousTotalSteps
                 previousTotalSteps = steps
                 totalSteps = currentSteps
-                Log.d(TAG, "Total steps: $totalSteps")
+//                Log.d(TAG, "Total steps: $totalSteps")
             }
-            Sensor.TYPE_STEP_DETECTOR -> {
-                Log.d(TAG, "Step detected!")
-            }
+//            Sensor.TYPE_STEP_DETECTOR -> {
+//                Log.d(TAG, "Step detected!")
+//            }
         }
 
 
         if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) { // TODO is this the frequency? the 1000
+            val timestamp = System.currentTimeMillis()
 
             // Write the sensor data on the screen
+            // Uncomment to
+            /*
             val sensorData = findViewById<TextView>(R.id.sensorData)
-
-            val timestamp = System.currentTimeMillis()
             sensorData.text = """
             ⏱️$timestamp
             ❤️ $heartRate
@@ -509,6 +510,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             👣 $totalSteps
             📡 ${scannedDevices.toString()}
         """.trimIndent()
+        */
 
             writeDataToCSV(
                 timestamp,

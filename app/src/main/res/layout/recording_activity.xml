@@ -28,13 +28,4 @@
             tools:visibility="visible" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/sensorData"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="2pt"
-        android:text="Sensor Data"
-        android:textColor="@android:color/white" />
-
-
 </LinearLayout>
