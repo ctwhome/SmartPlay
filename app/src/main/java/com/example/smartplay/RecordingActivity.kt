@@ -52,8 +52,6 @@ import android.os.Looper
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.view.GestureDetector
-import android.view.MotionEvent
-import android.view.View
 
 class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
 
@@ -334,6 +332,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private fun startRecording() {
 //        checkPermission()
 
+
+
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
         val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
@@ -404,6 +404,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        // Register step counter and step detector sensors
+        sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, stepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         val provider = LocationManager.GPS_PROVIDER // or LocationManager.NETWORK_PROVIDER
         if (ContextCompat.checkSelfPermission(
@@ -449,6 +452,8 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
     override fun onSensorChanged(event: SensorEvent) {
 
+        // Uncomment to
+        // UPDATE STATS IN THE RECORDING SCREEN
         when (event.sensor.type) {
             Sensor.TYPE_HEART_RATE -> {
                 heartRate = event.values[0]
@@ -476,12 +481,12 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
 
             Sensor.TYPE_STEP_COUNTER -> {
-                totalSteps = event.values[0]
-                val currentSteps = totalSteps - previousTotalSteps
-                previousTotalSteps = totalSteps
-                Log.d(TAG, "Steps: $currentSteps")
+                val steps = event.values[0]
+                val currentSteps = steps + previousTotalSteps
+                previousTotalSteps = steps
+                totalSteps = currentSteps
+                Log.d(TAG, "Total steps: $totalSteps")
             }
-
             Sensor.TYPE_STEP_DETECTOR -> {
                 Log.d(TAG, "Step detected!")
             }
@@ -583,28 +588,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
-    private fun checkPermission() {
-        if (ContextCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED ||
-
-            ContextCompat.checkSelfPermission(
-                this, Manifest.permission.BODY_SENSORS
-            ) != PackageManager.PERMISSION_GRANTED ||
-
-            ContextCompat.checkSelfPermission(
-                this, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-
-        ) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BODY_SENSORS
-                ), 0
-            )
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
@@ -629,82 +612,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
-//    @Deprecated("Deprecated in Java")
-//    override fun onBackPressed() {
-//            val intent = Intent(this, PasswordActivity::class.java)
-//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-//            startActivity(intent)
-//
-////        showExitDialog()
-//    }
-
-
-    // Custom GestureListener to detect swipe gestures
-    inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
-        private val SWIPE_THRESHOLD = 100
-        private val SWIPE_VELOCITY_THRESHOLD = 100
-
-        override fun onFling(
-            e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float
-        ): Boolean {
-            if (e1 == null || e2 == null) return false
-            val diffY = e2.y - e1.y
-            val diffX = e2.x - e1.x
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                    if (diffX > 0) {
-                        // Swipe Right
-                        onSwipeRight()
-                    } else {
-                        // Swipe Left
-                        onSwipeLeft()
-                    }
-                    return true
-                }
-            }
-            return false
-        }
-    }
-
-    private fun onSwipeLeft() {
-        showExitDialog()
-    }
-
-    private fun onSwipeRight() {
-        showExitDialog()
-        // Optional: Implement if needed
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        showExitDialog()
-    }
-
-//    override fun onUserLeaveHint() {
-//        super.onUserLeaveHint()
-//        showExitDialog()
-//    }
-
-//    override fun onPause() {
-//        super.onPause()
-//        if (!isChangingConfigurations) {
-//            showExitDialog()
-//        }
-//    }
-
-//    override fun onStop() {
-//        super.onStop()
-//            showExitDialog()
-////        if (!isChangingConfigurations) {
-////        }
-//    }
-
-    override fun onStop() {
-        super.onStop()
-        if (!isChangingConfigurations) {
-            showExitDialog()
-        }
-    }
 
     private fun showExitDialog() {
         val builder = AlertDialog.Builder(this)
