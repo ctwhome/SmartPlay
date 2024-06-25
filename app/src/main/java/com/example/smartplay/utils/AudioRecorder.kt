@@ -86,7 +86,7 @@ class AudioRecorder(private val activity: Activity) {
         try {
             mediaRecorder?.apply {
                 stop()
-                Log.d(TAG, "Recording stopped")
+                Log.d(TAG, "Audio Recording stopped")
             }
         } catch (e: RuntimeException) {
             Log.e(TAG, "Stop failed: ${e.message}")

@@ -16,14 +16,14 @@
             style="@android:style/Widget.Holo.Button.Toggle"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Start" />
+            android:text="Saving data..." />
 
         <Button
             android:id="@+id/stopButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:backgroundTint="#9F05FF"
-            android:text="Stop"
+            android:text="Recording"
             android:visibility="visible"
             tools:visibility="visible" />
     </LinearLayout>

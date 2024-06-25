@@ -174,7 +174,7 @@ fun vibrate(context: Context) {
 
 // Function to stop all scheduled notifications
 fun stopAllNotifications() {
-    Log.d(TAG, "Stopping all scheduled notifications...")
+//    Log.d(TAG, "Stopping all scheduled notifications...")
     handlerRunnableMap.values.flatten().forEach { (handler, runnable) ->
         handler.removeCallbacks(runnable)
     }
@@ -186,5 +186,5 @@ fun stopAllNotifications() {
         }
     }
     activeDialogsMap.clear()
-    Log.d(TAG, "All scheduled notifications and dialogs have been stopped.")
+//    Log.d(TAG, "All scheduled notifications and dialogs have been stopped.")
 }

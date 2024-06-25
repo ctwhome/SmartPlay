@@ -2,6 +2,7 @@ package com.example.smartplay
 
 import AudioRecorder
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.pm.PackageManager
@@ -333,7 +334,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 //        checkPermission()
 
 
-
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
         val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
@@ -425,32 +425,44 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         isRecording = false
         sensorManager.unregisterListener(this)
         locationManager.removeUpdates(this)
+        scanHandler.removeCallbacks(scanRunnable)
+
         stopAllNotifications()
+
+        // Stop audio recording
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
+        if (checkBoxAudioRecording.toBoolean()) {
+            audioRecorder.stopRecording()
+        }
+
+        // Stop bluetooth scanning
+        //bluetoothLeScanner.stopScan(scanCallback)
+
+        // Close the CSV writer
         try {
             csvWriter.flush()
             csvWriter.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        scanHandler.removeCallbacks(scanRunnable)
-        try {
             csvBTWriter.flush()
             csvBTWriter.close()
         } catch (e: IOException) {
             e.printStackTrace()
         }
 
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
-        // Stop audio recording
-        if (checkBoxAudioRecording.toBoolean()) {
 
-            audioRecorder.stopRecording()
-        }
+        // Stop the foreground service
+        val serviceIntent = Intent(this, ForegroundService::class.java)
+        stopService(serviceIntent)
+
+        // delay to ensure the audio file is saved before the next activity starts
+        Thread.sleep(2000)  // 1 second
+
+        val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        if (!isRecording) return
 
         // Uncomment to
         // UPDATE STATS IN THE RECORDING SCREEN
@@ -471,7 +483,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 gyroX = event.values[0]
                 gyroY = event.values[1]
                 gyroZ = event.values[2]
-//                writeDataToCSV(timestamp, gyroX = x, gyroY = y, gyroZ = z)
             }
 
             Sensor.TYPE_MAGNETIC_FIELD -> {
@@ -485,21 +496,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 val currentSteps = steps + previousTotalSteps
                 previousTotalSteps = steps
                 totalSteps = currentSteps
-//                Log.d(TAG, "Total steps: $totalSteps")
             }
-//            Sensor.TYPE_STEP_DETECTOR -> {
-//                Log.d(TAG, "Step detected!")
-//            }
         }
 
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
-        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > (sharedPref.getString(
-                "frequencyRate",
-                "1000"
+        if (abs(SystemClock.elapsedRealtime() - lastUpdateTime) > (sharedPref.getString(
+                "frequencyRate", "1000"
             )?.toInt() ?: 1000)
-        ) { // TODO is this the frequency? the 1000
+        ) {
             val timestamp = System.currentTimeMillis()
 
             // Write the sensor data on the screen
@@ -621,10 +627,16 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     }
 
 
+    @SuppressLint("WearPasswordInput")
     private fun showExitDialog() {
+
+        stopButton.visibility = Button.GONE
+        startButton.visibility = Button.VISIBLE
+
         val builder = AlertDialog.Builder(this)
         val editText = EditText(this)
-        editText.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        editText.inputType =
+            android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
         editText.hint = "Enter Password"
 
         builder.apply {
@@ -638,7 +650,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             // Request focus and show the keyboard
             editText.requestFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+            imm.toggleSoftInput(
+                InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY
+            )
 
             editText.setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
@@ -646,16 +660,17 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                     val correctPassword = "2211"
 
                     if (enteredPassword == correctPassword) {
-                        dialog.dismiss()
-                        startButton.visibility = Button.VISIBLE
-                        stopButton.visibility = Button.GONE
-                        val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
-                        startActivity(intent)
 
+                        dialog.dismiss()
                         stopRecording()
-                        finish()  // Finish the current activity if you don't want to return to it.
+
+//                        finish()  // Finish the current activity if you don't want to return to it.
                     } else {
-                        Toast.makeText(this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT
+                        ).show()
+                        stopButton.visibility = Button.VISIBLE
+                        startButton.visibility = Button.GONE
                         // close dialog
                         dialog.dismiss()
                     }
@@ -666,9 +681,6 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             }
         }
     }
-
-
-
 
 
 }
