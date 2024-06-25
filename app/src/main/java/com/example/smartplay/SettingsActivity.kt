@@ -1,5 +1,6 @@
 package com.example.smartplay
 
+import android.Manifest
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
@@ -19,12 +20,15 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 //import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.example.smartplay.utils.Workflow
 import java.io.File
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.io.IOException
 
 class SettingsActivity : AppCompatActivity() {
     //    show battery level in the @+id/batteryLevel field
@@ -59,6 +63,20 @@ class SettingsActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
+        ActivityCompat.requestPermissions(
+            this, arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+
+                /* Permissions required higher versions */
+                // Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+                // Manifest.permission.BODY_SENSORS_BACKGROUND,
+
+            ), 0
+        )
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         readFileFromSDCard()
@@ -143,6 +161,7 @@ class SettingsActivity : AppCompatActivity() {
                     "selectedWorkflow", parent.getItemAtPosition(position).toString()
                 )
             }
+
             override fun onNothingSelected(parent: AdapterView<*>) {
                 // Another interface callback
             }
@@ -171,7 +190,8 @@ class SettingsActivity : AppCompatActivity() {
 
         // checkBoxAudioRecording
         val checkBoxAudioRecording: CheckBox = findViewById(R.id.checkBoxAudioRecording)
-        checkBoxAudioRecording.isChecked = sharedPref.getString("checkBoxAudioRecording", "true").toBoolean()
+        checkBoxAudioRecording.isChecked =
+            sharedPref.getString("checkBoxAudioRecording", "true").toBoolean()
         checkBoxAudioRecording.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxAudioRecording", isChecked.toString())
         }
@@ -221,7 +241,8 @@ class SettingsActivity : AppCompatActivity() {
 
         // checkBoxBluetoothProximity
         val checkBoxBluetoothProximity: CheckBox = findViewById(R.id.checkBoxBluetoothProximity)
-        checkBoxBluetoothProximity.isChecked = sharedPref.getString("checkBoxBluetoothProximity", "true").toBoolean()
+        checkBoxBluetoothProximity.isChecked =
+            sharedPref.getString("checkBoxBluetoothProximity", "true").toBoolean()
         checkBoxBluetoothProximity.setOnCheckedChangeListener { buttonView, isChecked -> // Handle the checkbox state change here
             saveToSharedPreferences("checkBoxBluetoothProximity", isChecked.toString())
         }

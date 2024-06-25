@@ -646,13 +646,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                     val correctPassword = "2211"
 
                     if (enteredPassword == correctPassword) {
+                        dialog.dismiss()
+                        startButton.visibility = Button.VISIBLE
+                        stopButton.visibility = Button.GONE
                         val intent = Intent(this@RecordingActivity, SettingsActivity::class.java)
                         startActivity(intent)
 
-                        startButton.visibility = Button.VISIBLE
-                        stopButton.visibility = Button.GONE
                         stopRecording()
-                        dialog.dismiss()
                         finish()  // Finish the current activity if you don't want to return to it.
                     } else {
                         Toast.makeText(this@RecordingActivity, "Incorrect password", Toast.LENGTH_SHORT).show()
