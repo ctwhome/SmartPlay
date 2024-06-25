@@ -493,7 +493,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
 
 
-        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) { // TODO is this the frequency? the 1000
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
+        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > (sharedPref.getString(
+                "frequencyRate",
+                "1000"
+            )?.toInt() ?: 1000)
+        ) { // TODO is this the frequency? the 1000
             val timestamp = System.currentTimeMillis()
 
             // Write the sensor data on the screen

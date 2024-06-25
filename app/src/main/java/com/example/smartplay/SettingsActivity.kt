@@ -68,7 +68,7 @@ class SettingsActivity : AppCompatActivity() {
             val intent = Intent(this@SettingsActivity, RecordingActivity::class.java)
             startActivity(intent)
             // kill the activity
-//            finish()
+            // finish()
         }
 
 
@@ -100,7 +100,7 @@ class SettingsActivity : AppCompatActivity() {
         // Initialize the EditText
         val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
         // To set a value to the EditText from the SharedPreferences or a default value of 1000
-        frequencyRate.setText(sharedPref.getString("frequencyRate", "3000"))
+        frequencyRate.setText(sharedPref.getString("frequencyRate", "1000"))
         frequencyRate.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
