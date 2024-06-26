@@ -132,18 +132,23 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         longitude = location.longitude
     }
 
+    private val handler = Handler()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.recording_activity)
 
         supportActionBar?.hide() // Hide the action bar
 
+        // Ensure this activity allows interruptions
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+        )
+
         startButton = findViewById(R.id.startButton)
         stopButton = findViewById(R.id.stopButton)
-
-
-        // Keep this activity in focus   // TODO
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Check permissions and start scanning
         checkPermissions()
@@ -422,6 +427,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     }
 
     private fun stopRecording() {
+        handler.removeCallbacksAndMessages(null)
         isRecording = false
         sensorManager.unregisterListener(this)
         locationManager.removeUpdates(this)
@@ -544,6 +550,24 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let {
+            val questionId = it.getIntExtra("question_id", -1)
+            val answer = it.getStringExtra("answer")
+            if (questionId != -1 && answer != null) {
+                val timestamp = System.currentTimeMillis()
+                Log.d(TAG, "Selected answer: ${timestamp}, $questionId, Answer: $answer")
+                RecordingActivity.writeQuestionsToCSV(
+                    timestamp, questionId.toString(), "Answer", answer
+                )
+            }
+        }
+        // Ensure the activity is brought to the foreground
+        setIntent(intent)
+    }
+
+
     private fun writeDataToCSV(
         timestamp: Long,
         latitude: Double? = null,
@@ -612,7 +636,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         when (requestCode) {
             0 -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+                    // Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
                     // Disable the functionality that depends on this permission.

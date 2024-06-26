@@ -95,7 +95,10 @@ class SettingsActivity : AppCompatActivity() {
         // Set a click listener for the button
         closeAppButton.setOnClickListener {
             // terminate the app when the button is clicked
-            finish()
+            // close all activities
+            finishAffinity()
+
+
         }
 
         //

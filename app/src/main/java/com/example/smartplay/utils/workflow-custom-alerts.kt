@@ -1,3 +1,5 @@
+/* This workflow uses the previous custom dialog for the *//*
+
 package com.example.smartplay.utils
 
 import android.app.AlertDialog
@@ -19,6 +21,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 
+
 data class Question(
     val question_id: Int,
     val question_title: String,
@@ -29,7 +32,8 @@ data class Question(
 )
 
 data class Workflow(
-    val workflow_name: String, val questions: List<Question>
+    val workflow_name: String,
+    val questions: List<Question>
 )
 
 val TAG = "CustomDialogScheduler"
@@ -60,15 +64,13 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
         handler.postDelayed(initialRunnable, initialDelay)
 
         // Add to map of handlers and runnables by question ID
-        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }
-            .add(handler to initialRunnable)
+        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to initialRunnable)
     }
 }
 
 fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
     val frequency = question.frequency
-    val repetitionInterval =
-        question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
+    val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
 
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
@@ -82,8 +84,7 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
         handler.postDelayed(repetitionRunnable, delay)
 
         // Add to map of handlers and runnables by question ID
-        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }
-            .add(handler to repetitionRunnable)
+        handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to repetitionRunnable)
     }
 }
 
@@ -110,7 +111,7 @@ fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val name = "Question Channel"
         val descriptionText = "Channel for Question Notifications"
-        val importance = NotificationManager.IMPORTANCE_HIGH
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
         val channel = NotificationChannel("QUESTION_CHANNEL_ID", name, importance).apply {
             description = descriptionText
         }
@@ -121,7 +122,9 @@ fun createNotificationChannel(context: Context) {
     }
 }
 
-/* Notifications with custom dialog*/
+*/
+/* Notifications *//*
+
 fun showMessageDialog(context: Context, question: Question) {
     // Create the notification channel
     createNotificationChannel(context)
@@ -151,26 +154,17 @@ fun showMessageDialog(context: Context, question: Question) {
     // Full-screen intent
     val fullScreenIntent = Intent(context, RecordingActivity::class.java).apply {
         putExtra("question_id", question.question_id)
-        addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-        )
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
-    val fullScreenPendingIntent = PendingIntent.getActivity(
-        context,
-        0,
-        fullScreenIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
+    val fullScreenPendingIntent = PendingIntent.getActivity(context, 0, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
     val notificationBuilder = NotificationCompat.Builder(context, "QUESTION_CHANNEL_ID")
         .setSmallIcon(R.drawable.ic_launcher_foreground)
         .setContentTitle(question.question_title)
         .setContentText("Please answer the question.")
-        .setPriority(NotificationCompat.PRIORITY_HIGH)  // High priority for heads-up notification
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setCategory(NotificationCompat.CATEGORY_CALL)
-        .setFullScreenIntent(fullScreenPendingIntent, true)  // Full-screen intent
+        .setFullScreenIntent(fullScreenPendingIntent, true)
         .setAutoCancel(true)
 
     // Add action buttons for each answer
@@ -178,18 +172,10 @@ fun showMessageDialog(context: Context, question: Question) {
         val intent = Intent(context, RecordingActivity::class.java).apply {
             putExtra("question_id", question.question_id)
             putExtra("answer", answer)
-            addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-            )
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            context,
-            index,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent: PendingIntent =
+            PendingIntent.getActivity(context, index, intent, PendingIntent.FLAG_UPDATE_CURRENT)
 
         notificationBuilder.addAction(
             R.drawable.ic_launcher_foreground,
@@ -203,14 +189,15 @@ fun showMessageDialog(context: Context, question: Question) {
     }
 }
 
-/* Audio and Vibration */
+
+
+*/
+/* Audio and Vibration *//*
+
 fun playSound(context: Context) {
     try {
         Log.d(TAG, "Attempting to play fallback sound")
-        val mediaPlayer = MediaPlayer.create(
-            context,
-            R.raw.fallback_sound
-        ) // Ensure fallback_sound is a valid sound file in res/raw
+        val mediaPlayer = MediaPlayer.create(context, R.raw.fallback_sound) // Ensure fallback_sound is a valid sound file in res/raw
         if (mediaPlayer == null) {
             Log.e(TAG, "Fallback MediaPlayer creation failed")
             return
@@ -248,3 +235,4 @@ fun stopAllNotifications() {
     activeDialogsMap.clear()
     Log.d(TAG, "All scheduled notifications and dialogs have been stopped.")
 }
+*/
