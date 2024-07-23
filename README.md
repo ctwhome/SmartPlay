@@ -8,6 +8,15 @@ Inside the Device File Explorer, set the workflows file in this path:
 ```
 You can find the workflows.json demo file in the app/sampledata folder of this repository.
 
+
+
+### First time set up (New watch)
+- For a Samsung Galaxy Watch v6 and above.
+  - Activate the watch pairing it with an android phone and the Samsuang Wereable app.
+  - Once you are inside, enable developer options in the watch. (settings -> about the watch -> software information)
+  - Inside that screen, tap several times in the "software information" tile until the message 'developer option enabled' appears.
+  - No you can estart connecting your watch with your computer via cable or wifi. (see steps below)
+
 ### ⌚️ Installing the application on the device
 Make sure you have adb installed on your computer and the watch is connected to your computer, via usb or wifi.
 Note: I could only install the application via Wifi Debugging, check the notes below on how to install it. 
