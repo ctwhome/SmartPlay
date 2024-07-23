@@ -39,10 +39,10 @@ Here's a brief description of each part of the filename:
   - AUDIO for audio recordings.
   - BT for Bluetooth scan data.
   - QUESTIONS for responses to workflow questions.
-- device_id: A unique identifier for the device, such as faaab8a5585c9531 in the example.
+- device_id: A unique identifier for the device, such as `faaab8a5585c9531` in the example.
 - timestamp: The exact time when the recording was made, ensuring each file has a unique identifier.
 
-For example, a filename like 1_AUDIO_faaab8a5585c9531_1717009923893.3gp indicates an audio recording for user 1, captured by device faaab8a5585c9531 at the timestamp 1717009923893.
+For example, a filename like `1_AUDIO_faaab8a5585c9531_1717009923893.3gp` indicates an audio recording for user 1, captured by device `faaab8a5585c9531` at the timestamp `1717009923893`.
 
 ## Privacy
 The generated files are stored in the internal storage of the app's private directory, which is not directly accessible via the SD card or other file explorer apps unless your device is rooted.
@@ -50,10 +50,13 @@ The generated files are stored in the internal storage of the app's private dire
 ## 🛜 Connecting the smartwatch via Wifi Debugging
 I couldn't make the installation of the application work via usb cable, but yes over wifi debugging.
 
-On the watch
+On the watch, go to `settings-> developer options`
 1. Enable developer options
 2. Enable ADB debugging
-3. Enable Debug over wifi (it will take a moment to establish an ip:port)
+3. Go to Wireless debugging and click on `+ Pair new device`
+3.1 on the watch you will see the IP address & Port to use on your computer
+3.2 On your computer terminal run the command: `adb pair <YOUR_API_ADDRESS:PORT>
+3.3 Once the watch is paired with the computer, you can connect now from your terminal running the command: `adb connect  <YOUR_API_ADDRESS:PORT>`, You will find the IP adress and the port in the `Wireless debugging` screen again. 
 
 Once you have the ip:port, you can connect to the watch via adb
 ```shell
@@ -61,7 +64,8 @@ adb connect ip:port
 ```
 Now you can install the APK: Now, you can install the APK with the adb install command. Replace /path/to/your/app-debug.apk with the path to your APK file:
 ```
-adb -s ip:port install /path/to/your/app-debug.apk
+# list your connected devices:
+adb -s ip:port install `</path/to/your/app-debug.apk>`
 ```
 
 
