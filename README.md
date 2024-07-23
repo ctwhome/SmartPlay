@@ -14,7 +14,7 @@ You can find the workflows.json demo file in the app/sampledata folder of this r
 - For a Samsung Galaxy Watch v6 and above.
   - Activate the watch pairing it with an android phone and the Samsuang Wereable app.
   - Once you are inside, enable developer options in the watch. (settings -> about the watch -> software information)
-  - Inside that screen, tap several times in the "software information" tile until the message 'developer option enabled' appears.
+  - Inside that screen, tap several times in the "software information" tile until the message 'developer mode turned on' appears.
   - No you can estart connecting your watch with your computer via cable or wifi. (see steps below)
 
 ### ⌚️ Installing the application on the device
