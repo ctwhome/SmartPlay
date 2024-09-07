@@ -17,11 +17,12 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import com.example.smartplay.utils.Workflow
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.yourpackage.utils.FileUtils
+import androidx.appcompat.app.AppCompatActivity
+
+import com.example.smartplay.utils.Workflow
+import com.example.smartplay.utils.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
     private fun showBatteryLevel() {
@@ -144,7 +145,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun getWorkflowList(): List<String> {
-        return FileUtils.readFileFromSDCard(this)
+        return FileUtils.readFileFromAppSpecificDirectory(this)
     }
 
     private fun saveToSharedPreferences(keyName: String, inputValue: String) {

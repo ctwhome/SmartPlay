@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.smartplay.utils.FileUtils // Make sure to use the correct package name
 
 /* Global Object Class (singleton) Store to save the application preferences. */
 object AppData {
@@ -141,6 +142,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeApp() {
+        // Create app-specific directory
+        FileUtils.createAppSpecificDirectoryIfNotExists(this)
+
         val buttonOpenSecondActivity: Button = findViewById(R.id.button_enter_password)
         buttonOpenSecondActivity.setOnClickListener {
             val intent = Intent(this@MainActivity, SettingsActivity::class.java)
