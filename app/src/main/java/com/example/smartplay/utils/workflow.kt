@@ -36,7 +36,7 @@ val activeDialogsMap = mutableMapOf<Int, AlertDialog>()
 fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
     workflow[0].questions.forEach { question ->
         val startTime = question.time_after_start_in_minutes
-        val initialDelay = startTime * 1000L // Convert to milliseconds
+        val initialDelay = startTime * 1000L // Now treated as seconds
         val handler = Handler(Looper.getMainLooper())
 
         // Define the runnable
@@ -59,7 +59,8 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
 
 fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
     val frequency = question.frequency
-    val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Convert to milliseconds
+    // Changed from minutes to seconds for testing purposes
+    val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Now treated as seconds
 
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
@@ -163,8 +164,6 @@ fun playSound(context: Context) {
         Log.e("playFallbackSound", "Error playing fallback sound: ${e.message}")
     }
 }
-
-
 
 fun vibrate(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
