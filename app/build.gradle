@@ -32,6 +32,9 @@ android {
 }
 
 dependencies {
+    implementation "androidx.wear:wear-ongoing:1.0.0"
+    // Includes LocusIdCompat and new Notification categories for Ongoing Activity.
+    implementation "androidx.core:core:1.6.0"
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'com.google.android.gms:play-services-wearable:18.0.0'

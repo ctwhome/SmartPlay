@@ -34,13 +34,17 @@ val handlerRunnableMap = mutableMapOf<Int, MutableList<Pair<Handler, Runnable>>>
 val activeDialogsMap = mutableMapOf<Int, AlertDialog>()
 
 fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
+    Log.d(TAG, "Scheduling custom dialogs for workflow: ${workflow[0].workflow_name}")
     workflow[0].questions.forEach { question ->
         val startTime = question.time_after_start_in_minutes
         val initialDelay = startTime * 1000L // Now treated as seconds
         val handler = Handler(Looper.getMainLooper())
 
+        Log.d(TAG, "Scheduling question ${question.question_id}: '${question.question_title}' with initial delay: $initialDelay ms")
+
         // Define the runnable
         val initialRunnable = Runnable {
+            Log.d(TAG, "Executing initial runnable for question ${question.question_id}")
             showMessageDialog(context, question)
             scheduleRepetitions(handler, question, context)
         }
@@ -55,6 +59,7 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
         // Add to map of handlers and runnables by question ID
         handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to initialRunnable)
     }
+    Log.d(TAG, "Finished scheduling all questions for workflow: ${workflow[0].workflow_name}")
 }
 
 fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
@@ -62,16 +67,21 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
     // Changed from minutes to seconds for testing purposes
     val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Now treated as seconds
 
+    Log.d(TAG, "Scheduling repetitions for question ${question.question_id}: frequency=$frequency, interval=$repetitionInterval ms")
+
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
 
         // Define the runnable
         val repetitionRunnable = Runnable {
+            Log.d(TAG, "Executing repetition $i for question ${question.question_id}")
             showMessageDialog(context, question)
         }
 
         // Schedule the repetition
         handler.postDelayed(repetitionRunnable, delay)
+
+        Log.d(TAG, "Scheduled repetition $i for question ${question.question_id} with delay: $delay ms")
 
         // Add to map of handlers and runnables by question ID
         handlerRunnableMap.computeIfAbsent(question.question_id) { mutableListOf() }.add(handler to repetitionRunnable)
@@ -79,6 +89,7 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
 }
 
 fun cancelScheduledTasks(questionId: Int) {
+    Log.d(TAG, "Cancelling scheduled tasks for question $questionId")
     handlerRunnableMap[questionId]?.forEach { (handler, runnable) ->
         handler.removeCallbacks(runnable)
     }
@@ -86,6 +97,7 @@ fun cancelScheduledTasks(questionId: Int) {
 }
 
 fun closeActiveDialog(questionId: Int) {
+    Log.d(TAG, "Closing active dialog for question $questionId")
     activeDialogsMap[questionId]?.let { dialog ->
         if (dialog.isShowing) {
             dialog.dismiss()
@@ -95,15 +107,18 @@ fun closeActiveDialog(questionId: Int) {
 }
 
 fun showMessageDialog(context: Context, question: Question) {
+    Log.d(TAG, "Showing message dialog for question ${question.question_id}: '${question.question_title}'")
+
     // Make sound and vibrate
     val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
     val checkBoxVibration = sharedPref.getString("checkBoxVibration", "true")
     if (checkBoxVibration.toBoolean()) {
-        // show value in log of the checkboxVibration
+        Log.d(TAG, "Vibration enabled, vibrating...")
         vibrate(context)
     }
     val checkBoxSound = sharedPref.getString("checkBoxSound", "true")
     if (checkBoxSound.toBoolean()) {
+        Log.d(TAG, "Sound enabled, playing sound...")
         playSound(context)
     }
 
@@ -121,7 +136,7 @@ fun showMessageDialog(context: Context, question: Question) {
         return
     }
 
-    Log.d(TAG, "Showing dialog for question: ${question.question_title} with answers: ${question.answers}")
+    Log.d(TAG, "Building AlertDialog for question: ${question.question_title} with answers: ${question.answers}")
 
     val builder = AlertDialog.Builder(context)
     builder.setTitle(question.question_title)
@@ -143,6 +158,7 @@ fun showMessageDialog(context: Context, question: Question) {
     closeActiveDialog(question.question_id) // Close any existing dialog before showing the new one
     activeDialogsMap[question.question_id] = dialog
     dialog.show()
+    Log.d(TAG, "AlertDialog shown for question ${question.question_id}")
 }
 
 /* Audio and Vibration */
@@ -169,6 +185,7 @@ fun vibrate(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
     vibrator.vibrate(vibrationEffect)
+    Log.d(TAG, "Vibration executed")
 }
 
 // Function to stop all scheduled notifications

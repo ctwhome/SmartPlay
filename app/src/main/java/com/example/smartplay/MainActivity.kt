@@ -73,7 +73,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Log OpenGL information
-        logOpenGLInfo()
+        // logOpenGLInfo()
+
+        // Notification Button
+        val buttonNotify: Button = findViewById(R.id.button_notify)
+        buttonNotify.setOnClickListener {
+            val intent = Intent(this, NotificationService::class.java)
+            ContextCompat.startForegroundService(this, intent)
+        }
     }
 
     private fun allPermissionsGranted(): Boolean {
