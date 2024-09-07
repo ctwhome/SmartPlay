@@ -26,6 +26,8 @@ import com.google.gson.reflect.TypeToken
 import com.example.smartplay.utils.Workflow
 import com.example.smartplay.utils.scheduleCustomDialogs
 import com.example.smartplay.utils.stopAllNotifications
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 
 // Bluetooth
 import android.bluetooth.BluetoothAdapter
@@ -83,6 +85,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var stepDetectorSensor: Sensor? = null
     private var totalSteps = 0f
     private var previousTotalSteps = 0f
+
+    private val passwordActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            stopRecording()
+            finish() // Navigate back to the previous activity (settings)
+        }
+    }
 
     companion object {
         private lateinit var csvQuestionWriter: FileWriter
@@ -163,7 +172,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             if (isRecording) {
                 startButton.visibility = Button.VISIBLE
                 stopButton.visibility = Button.GONE
-                stopRecording()
+                showPasswordActivity()
             }
         }
 
@@ -173,6 +182,11 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         // Set initial visibility of buttons based on recording state
         startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
         stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
+    }
+
+    private fun showPasswordActivity() {
+        val intent = Intent(this, PasswordActivity::class.java)
+        passwordActivityLauncher.launch(intent)
     }
 
     private fun startScanning(context: Context = this) {
@@ -250,15 +264,41 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         val workflowString = sharedData.getString("workflowFile", "")
+        Log.d(TAG, "Workflow String: $workflowString")
+
+        if (workflowString.isNullOrEmpty()) {
+            Log.e(TAG, "Workflow string is null or empty")
+            return
+        }
+
         val gson = Gson()
         val workflowListType = object : TypeToken<List<Workflow>>() {}.type
-        val workflows: List<Workflow> = gson.fromJson(workflowString, workflowListType)
-        val selectedWorkflowName = sharedData.getString("selectedWorkflow", "NOT_FOUND")
 
-        Log.d(TAG, "Selected Workflow Name: $selectedWorkflowName")
+        try {
+            val workflows: List<Workflow>? = gson.fromJson(workflowString, workflowListType)
 
-        val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
-        scheduleCustomDialogs(workflow, this)
+            if (workflows == null) {
+                Log.e(TAG, "Parsed workflows list is null")
+                return
+            }
+
+            Log.d(TAG, "Parsed workflows: ${workflows.size}")
+
+            val selectedWorkflowName = sharedData.getString("selectedWorkflow", "NOT_FOUND")
+            Log.d(TAG, "Selected Workflow Name: $selectedWorkflowName")
+
+            val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
+
+            if (workflow.isEmpty()) {
+                Log.e(TAG, "No matching workflow found for name: $selectedWorkflowName")
+                return
+            }
+
+            scheduleCustomDialogs(workflow, this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing workflow JSON: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     private fun getWatchId(context: Context): String {
