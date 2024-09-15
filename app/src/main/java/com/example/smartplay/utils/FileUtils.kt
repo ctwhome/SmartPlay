@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Environment
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -96,15 +97,15 @@ object FileUtils {
     }
 
     fun createAppSpecificDirectoryIfNotExists(context: Context) {
-        val directory = getAppSpecificDirectory(context)
+        val directory = File(Environment.getExternalStorageDirectory(), "Android/data/${context.packageName}/files/")
         if (!directory.exists()) {
             if (directory.mkdirs()) {
-                Log.d(TAG, "App-specific directory created successfully")
+                Log.d(TAG, "App-specific directory created successfully: ${directory.absolutePath}")
             } else {
-                Log.e(TAG, "Failed to create app-specific directory")
+                Log.e(TAG, "Failed to create app-specific directory: ${directory.absolutePath}")
             }
         } else {
-            Log.d(TAG, "App-specific directory already exists")
+            Log.d(TAG, "App-specific directory already exists: ${directory.absolutePath}")
         }
     }
 }

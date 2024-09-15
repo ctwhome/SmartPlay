@@ -85,6 +85,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
     private var stepDetectorSensor: Sensor? = null
     private var totalSteps = 0f
     private var previousTotalSteps = 0f
+    private var sessionSteps = 0f
 
     private val passwordActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -381,6 +382,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, stepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+        // Reset step counting variables
+        totalSteps = 0f
+        previousTotalSteps = 0f
+        sessionSteps = 0f
 
         // Initialize the workflow questions
         initWorkflowQuestions()
@@ -435,13 +443,23 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 magnetoZ = event.values[2]
             }
             Sensor.TYPE_STEP_COUNTER -> {
-                totalSteps = event.values[0]
-                val currentSteps = totalSteps - previousTotalSteps
-                previousTotalSteps = totalSteps
-                Log.d(TAG, "Steps: $currentSteps")
+                val currentTotalSteps = event.values[0]
+                if (totalSteps == 0f) {
+                    // First reading, initialize totalSteps
+                    totalSteps = currentTotalSteps
+                    previousTotalSteps = totalSteps
+                } else {
+                    // Calculate steps taken since the last reading
+                    val stepsSinceLastReading = currentTotalSteps - totalSteps
+                    sessionSteps += stepsSinceLastReading
+                    totalSteps = currentTotalSteps
+                }
+                Log.d(TAG, "Session steps: $sessionSteps")
             }
             Sensor.TYPE_STEP_DETECTOR -> {
-                Log.d(TAG, "Step detected!")
+                // Increment session steps directly
+                sessionSteps++
+                Log.d(TAG, "Step detected! Session steps: $sessionSteps")
             }
         }
 
@@ -455,7 +473,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
             🧭 $magnetoX $magnetoY $magnetoZ
             🔀 $gyroX $gyroY $gyroZ
             🏎️ $accelX $accelY $accelZ
-            👣 $totalSteps
+            👣 $sessionSteps
             📡 ${scannedDevices.toString()}
             """.trimIndent()
 
@@ -464,7 +482,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
                 accelX, accelY, accelZ,
                 magnetoX, magnetoY, magnetoZ,
                 gyroX, gyroY, gyroZ,
-                totalSteps
+                sessionSteps
             )
             lastUpdateTime = SystemClock.elapsedRealtime()
         }
@@ -511,6 +529,7 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
 
         try {
             csvWriter.append(data.toString())
+            csvWriter.flush() // Ensure data is written to the file immediately
         } catch (e: IOException) {
             Log.e(TAG, "Error writing sensor data to CSV: ${e.message}")
             e.printStackTrace()

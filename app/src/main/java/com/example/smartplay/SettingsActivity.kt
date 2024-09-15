@@ -64,7 +64,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // Child ID Input
         val idInput: EditText = findViewById(R.id.id_input)
-        idInput.setText(sharedPref.getString("idChild", ""))
+        idInput.setText(sharedPref.getString("idChild", "001"))
         idInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
@@ -75,7 +75,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // Frequency Input
         val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
-        frequencyRate.setText(sharedPref.getString("frequencyRate", "3000"))
+        frequencyRate.setText(sharedPref.getString("frequencyRate", "1000"))
         frequencyRate.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
