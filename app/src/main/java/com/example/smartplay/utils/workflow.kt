@@ -9,7 +9,10 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import com.example.smartplay.R
-import com.example.smartplay.RecordingActivity
+
+interface QuestionRecorder {
+    fun writeQuestionsToCSV(timestamp: Long, questionId: String, questionTitle: String, answer: String)
+}
 
 data class Question(
     val question_id: Int,
@@ -33,7 +36,7 @@ val handlerRunnableMap = mutableMapOf<Int, MutableList<Pair<Handler, Runnable>>>
 // Map to keep track of active dialogs by question ID
 val activeDialogsMap = mutableMapOf<Int, AlertDialog>()
 
-fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
+fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context, questionRecorder: QuestionRecorder) {
     Log.d(TAG, "Scheduling custom dialogs for workflow: ${workflow[0].workflow_name}")
     workflow[0].questions.forEach { question ->
         val startTime = question.time_after_start_in_minutes
@@ -45,8 +48,8 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
         // Define the runnable
         val initialRunnable = Runnable {
             Log.d(TAG, "Executing initial runnable for question ${question.question_id}")
-            showMessageDialog(context, question)
-            scheduleRepetitions(handler, question, context)
+            showMessageDialog(context, question, questionRecorder)
+            scheduleRepetitions(handler, question, context, questionRecorder)
         }
 
         // Cancel any existing tasks and close any existing dialogs with the same question ID
@@ -62,7 +65,7 @@ fun scheduleCustomDialogs(workflow: List<Workflow>, context: Context) {
     Log.d(TAG, "Finished scheduling all questions for workflow: ${workflow[0].workflow_name}")
 }
 
-fun scheduleRepetitions(handler: Handler, question: Question, context: Context) {
+fun scheduleRepetitions(handler: Handler, question: Question, context: Context, questionRecorder: QuestionRecorder) {
     val frequency = question.frequency
     // Changed from minutes to seconds for testing purposes
     val repetitionInterval = question.time_between_repetitions_in_minutes * 1000L // Now treated as seconds
@@ -75,7 +78,7 @@ fun scheduleRepetitions(handler: Handler, question: Question, context: Context) 
         // Define the runnable
         val repetitionRunnable = Runnable {
             Log.d(TAG, "Executing repetition $i for question ${question.question_id}")
-            showMessageDialog(context, question)
+            showMessageDialog(context, question, questionRecorder)
         }
 
         // Schedule the repetition
@@ -106,7 +109,7 @@ fun closeActiveDialog(questionId: Int) {
     activeDialogsMap.remove(questionId)
 }
 
-fun showMessageDialog(context: Context, question: Question) {
+fun showMessageDialog(context: Context, question: Question, questionRecorder: QuestionRecorder) {
     Log.d(TAG, "Showing message dialog for question ${question.question_id}: '${question.question_title}'")
 
     // Make sound and vibrate
@@ -123,7 +126,7 @@ fun showMessageDialog(context: Context, question: Question) {
     }
 
     val timestamp = System.currentTimeMillis()
-    RecordingActivity.writeQuestionsToCSV(
+    questionRecorder.writeQuestionsToCSV(
         timestamp,
         question.question_id.toString(),
         question.question_title,
@@ -143,7 +146,7 @@ fun showMessageDialog(context: Context, question: Question) {
     builder.setSingleChoiceItems(question.answers.toTypedArray(), -1) { dialog, index ->
         val timestamp = System.currentTimeMillis()
         Log.d(TAG, "Selected answer: ${timestamp}, ${question.question_id}, ${question.question_title}, ${question.answers[index]}")
-        RecordingActivity.writeQuestionsToCSV(
+        questionRecorder.writeQuestionsToCSV(
             timestamp,
             question.question_id.toString(),
             question.question_title,

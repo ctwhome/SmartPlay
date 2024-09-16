@@ -1,123 +1,45 @@
 package com.example.smartplay
 
 import AudioRecorder
-import android.content.ContentValues.TAG
 import android.content.Context
-import android.hardware.*
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.os.Bundle
-import android.os.Environment
 import android.os.SystemClock
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
-import java.io.FileWriter
-import java.io.IOException
-import kotlin.math.abs
 import android.util.Log
-import android.provider.Settings
-import android.app.AlertDialog
 import android.view.WindowManager
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.example.smartplay.utils.Workflow
-import com.example.smartplay.utils.scheduleCustomDialogs
-import com.example.smartplay.utils.stopAllNotifications
+import android.app.AlertDialog
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContracts
-
-// Bluetooth
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
 import android.os.Handler
 import android.os.Looper
+import com.example.smartplay.sensors.CustomSensorManager
+import com.example.smartplay.location.CustomLocationManager
+import com.example.smartplay.bluetooth.CustomBluetoothManager
+import com.example.smartplay.data.DataRecorder
+import com.example.smartplay.workflow.WorkflowManager
+import com.example.smartplay.utils.QuestionRecorder
+//import com.example.smartplay.utils.AudioRecorder
 
-class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationListener {
+class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
-    private lateinit var sensorManager: SensorManager
-    private lateinit var locationManager: LocationManager
-
-    private var heartRateSensor: Sensor? = null
-    private var accelerometerSensor: Sensor? = null
-    private var gyroscopeSensor: Sensor? = null
-    private var magnetometerSensor: Sensor? = null
-    private var isRecording = false
-
-    private var lastUpdateTime: Long = 0
-    private var latitude: Double = 0.0
-    private var longitude: Double = 0.0
-
-    private var heartRate: Float = 0F
-
-    private var accelX: Float = 0F
-    private var accelY: Float = 0F
-    private var accelZ: Float = 0F
-
-    private var gyroX: Float = 0F
-    private var gyroY: Float = 0F
-    private var gyroZ: Float = 0F
-
-    private var magnetoX: Float = 0F
-    private var magnetoY: Float = 0F
-    private var magnetoZ: Float = 0F
-
-    private lateinit var bluetoothAdapter: BluetoothAdapter
-    private var bluetoothLeScanner: BluetoothLeScanner? = null
-    private val scannedDevices = mutableMapOf<String, Int>()
-    private lateinit var scanHandler: Handler
-    private lateinit var scanRunnable: Runnable
-
+    private lateinit var sensorManager: CustomSensorManager
+    private lateinit var locationManager: CustomLocationManager
+    private lateinit var bluetoothManager: CustomBluetoothManager
+    private lateinit var dataRecorder: DataRecorder
+    private lateinit var workflowManager: WorkflowManager
     private lateinit var audioRecorder: AudioRecorder
 
-    private lateinit var csvWriter: FileWriter
-    private lateinit var csvQuestionWriter: FileWriter
-    private lateinit var csvBTWriter: FileWriter
-
-    // Steps counting
-    private var stepCounterSensor: Sensor? = null
-    private var stepDetectorSensor: Sensor? = null
-    private var totalSteps = 0f
-    private var previousTotalSteps = 0f
-    private var sessionSteps = 0f
+    private var isRecording = false
+    private var lastUpdateTime: Long = 0
+    private var scannedDevices: Map<String, Int> = emptyMap()
 
     private val passwordActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             stopRecording()
             finish() // Navigate back to the previous activity (settings)
         }
-    }
-
-    companion object {
-        private lateinit var csvQuestionWriter: FileWriter
-
-        fun writeQuestionsToCSV(
-            timestamp: Long, questionID: String, questionText: String, answer: String
-        ) {
-            try {
-                csvQuestionWriter?.append("$timestamp,$questionID,$questionText,$answer\n")
-                csvQuestionWriter?.flush() // Ensure data is written to the file
-                Log.d(TAG, "Question logged: $timestamp,$questionID,$questionText,$answer")
-            } catch (e: IOException) {
-                Log.e(TAG, "Error writing to CSV: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        fun setCSVWriter(writer: FileWriter) {
-            csvQuestionWriter = writer
-        }
-    }
-
-    private val locationListener: LocationListener = LocationListener { location ->
-        latitude = location.latitude
-        longitude = location.longitude
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,36 +54,9 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
 
-        audioRecorder = AudioRecorder(this)
-        // Initialize the sensors and location
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-        magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
-
-        // Request location updates
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locationListener)
-
-        // Initialize Bluetooth
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
-        if (bluetoothAdapter == null) {
-            Log.e(TAG, "Device doesn't support Bluetooth")
-            // Handle the case where Bluetooth is not supported
-        } else {
-            bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-            if (bluetoothLeScanner == null) {
-                Log.e(TAG, "Bluetooth LE Scanner not available")
-                // Handle the case where BLE is not supported
-            }
-        }
+        initializeManagers()
 
         startButton.setOnClickListener {
-            println("Start button pressed")
             if (!isRecording) {
                 startButton.visibility = Button.GONE
                 stopButton.visibility = Button.VISIBLE
@@ -185,125 +80,23 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
     }
 
+    private fun initializeManagers() {
+        sensorManager = CustomSensorManager(this)
+        locationManager = CustomLocationManager(this)
+        bluetoothManager = CustomBluetoothManager(this)
+        dataRecorder = DataRecorder(this)
+        workflowManager = WorkflowManager(this, dataRecorder)
+        audioRecorder = AudioRecorder(this)
+
+        // Set up Bluetooth scan result listener
+        bluetoothManager.setOnScanResultListener { devices ->
+            scannedDevices = devices
+        }
+    }
+
     private fun showPasswordActivity() {
         val intent = Intent(this, PasswordActivity::class.java)
         passwordActivityLauncher.launch(intent)
-    }
-
-    private fun startScanning(context: Context = this) {
-        val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val frequencyRate = sharedPref.getString("frequencyRate", "1000")?.toLong() ?: 1000
-
-        if (!bluetoothAdapter.isEnabled) {
-            Log.e(TAG, "Bluetooth is not enabled")
-            // Handle the case where Bluetooth is not enabled
-            return
-        }
-
-        val bluetoothLeScanner = this.bluetoothLeScanner
-        if (bluetoothLeScanner == null) {
-            Log.e(TAG, "BluetoothLeScanner is null")
-            return
-        }
-
-        scanHandler = Handler(Looper.getMainLooper())
-        scanRunnable = object : Runnable {
-            override fun run() {
-                try {
-                    bluetoothLeScanner.startScan(null, ScanSettings.Builder().build(), scanCallback)
-                    scanHandler.postDelayed({
-                        try {
-                            bluetoothLeScanner.stopScan(scanCallback)
-                            recordBtData()
-                            scanHandler.postDelayed(this, frequencyRate)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error stopping BLE scan: ${e.message}")
-                        }
-                    }, frequencyRate)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error starting BLE scan: ${e.message}")
-                }
-            }
-        }
-        scanHandler.post(scanRunnable)
-    }
-
-    private val scanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val deviceAddress = result.device.address
-            val rssi = result.rssi
-            scannedDevices[deviceAddress] = rssi
-        }
-
-        override fun onScanFailed(errorCode: Int) {
-            Log.e(TAG, "BLE Scan Failed. Error Code: $errorCode")
-        }
-    }
-
-    private fun recordBtData() {
-        val timestamp = System.currentTimeMillis()
-        val data = StringBuilder("$timestamp")
-
-        scannedDevices.forEach { (device, rssi) ->
-            data.append(",$device-$rssi")
-        }
-
-        try {
-            csvBTWriter.append(data.toString()).append("\n")
-            csvBTWriter.flush()
-            Log.d(TAG, "Bluetooth data recorded: $data")
-        } catch (e: IOException) {
-            Log.e(TAG, "Error writing Bluetooth data: ${e.message}")
-            e.printStackTrace()
-        }
-
-        // Clear scanned devices for the next interval
-        scannedDevices.clear()
-    }
-
-    private fun initWorkflowQuestions() {
-        val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-
-        val workflowString = sharedData.getString("workflowFile", "")
-        Log.d(TAG, "Workflow String: $workflowString")
-
-        if (workflowString.isNullOrEmpty()) {
-            Log.e(TAG, "Workflow string is null or empty")
-            return
-        }
-
-        val gson = Gson()
-        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
-
-        try {
-            val workflows: List<Workflow>? = gson.fromJson(workflowString, workflowListType)
-
-            if (workflows == null) {
-                Log.e(TAG, "Parsed workflows list is null")
-                return
-            }
-
-            Log.d(TAG, "Parsed workflows: ${workflows.size}")
-
-            val selectedWorkflowName = sharedData.getString("selectedWorkflow", "NOT_FOUND")
-            Log.d(TAG, "Selected Workflow Name: $selectedWorkflowName")
-
-            val workflow = workflows.filter { it.workflow_name.trim() == selectedWorkflowName?.trim() }
-
-            if (workflow.isEmpty()) {
-                Log.e(TAG, "No matching workflow found for name: $selectedWorkflowName")
-                return
-            }
-
-            scheduleCustomDialogs(workflow, this)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing workflow JSON: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    private fun getWatchId(context: Context): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
 
     private fun startRecording() {
@@ -312,242 +105,116 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
-        val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        val btFile = File(dir, childId + "_BT_" + watchId + "_" + timestamp + ".csv")
 
-        try {
-            csvBTWriter = FileWriter(btFile, true)
-            // Write header
-            if (btFile.length() == 0L) {
-                csvBTWriter
-                    .append("timestamp")
-                    .append("\n")
-                    .flush()
-            }
-        } catch (e: IOException) {
-            Log.e(TAG, "Error creating Bluetooth CSV file: ${e.message}")
-            e.printStackTrace()
-        }
+        dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
 
-        // Start Bluetooth scanning
-        startScanning()
+        // Start managers
+        sensorManager.startListening()
+        locationManager.startListening()
+        bluetoothManager.startScanning(sharedPref.getString("frequencyRate", "1000")?.toLong() ?: 1000)
 
         // Record audio
-        if (checkBoxAudioRecording.toBoolean()) {
+        if (checkBoxAudioRecording?.toBoolean() == true) {
             audioRecorder.startRecording()
         }
 
-        val file = File(dir, childId + "_SENSORS_" + watchId + "_" + timestamp + ".csv")
-        val questionFile = File(dir, childId + "_QUESTIONS_" + watchId + "_" + timestamp + ".csv")
-        try {
-            csvWriter = FileWriter(file, true)
-            csvQuestionWriter = FileWriter(questionFile, true)
-            setCSVWriter(csvQuestionWriter)
-
-            // If file is empty, write the header columns for the CSV file
-            if (file.length() == 0L) {
-                // Conditional statements to determine which sensors to record
-                val header = StringBuilder("timestamp,")
-                val writeLatitude = sharedPref.getString("checkBoxLatitude", "true")
-                val writeLongitude = sharedPref.getString("checkBoxLongitude", "true")
-                val writeHeartRate = sharedPref.getString("checkBoxHeartRate", "true")
-                val writeAccelerometer = sharedPref.getString("checkBoxAccelerometer", "true")
-                val writeGyroscope = sharedPref.getString("checkBoxGyroscope", "true")
-                val writeMagnetometer = sharedPref.getString("checkBoxMagnetometer", "true")
-                val writeSteps = sharedPref.getString("checkBoxSteps", "true")
-
-                if (writeLatitude.toBoolean()) header.append("latitude,")
-                if (writeLongitude.toBoolean()) header.append("longitude,")
-                if (writeHeartRate.toBoolean()) header.append("heartRate,")
-                if (writeAccelerometer.toBoolean()) header.append("accelX,accelY,accelZ,")
-                if (writeGyroscope.toBoolean()) header.append("gyroX,gyroY,gyroZ,")
-                if (writeMagnetometer.toBoolean()) header.append("magnetoX,magnetoY,magnetoZ,")
-                if (writeSteps.toBoolean()) header.append("steps,")
-
-                // Remove trailing comma and add newline
-                if (header.last() == ',') header.setLength(header.length - 1)
-                header.append("\n")
-
-                csvWriter.append(header.toString())
-            }
-            if (questionFile.length() == 0L) {
-                csvQuestionWriter.append("timestamp,questionID,questionText,answer\n")
-            }
-            isRecording = true
-        } catch (e: IOException) {
-            Log.e(TAG, "Error creating sensor or question CSV files: ${e.message}")
-            e.printStackTrace()
-        }
-        sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this, magnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this, stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(this, stepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL)
-
-        // Reset step counting variables
-        totalSteps = 0f
-        previousTotalSteps = 0f
-        sessionSteps = 0f
+        isRecording = true
 
         // Initialize the workflow questions
         initWorkflowQuestions()
+
+        // Start updating UI
+        startUpdatingUI()
     }
 
     private fun stopRecording() {
         isRecording = false
-        sensorManager.unregisterListener(this)
-        locationManager.removeUpdates(this)
-        stopAllNotifications()
-        try {
-            csvWriter.flush()
-            csvWriter.close()
-        } catch (e: IOException) {
-            Log.e(TAG, "Error closing sensor CSV file: ${e.message}")
-            e.printStackTrace()
-        }
-
-        scanHandler.removeCallbacks(scanRunnable)
-        try {
-            csvBTWriter.flush()
-            csvBTWriter.close()
-        } catch (e: IOException) {
-            Log.e(TAG, "Error closing Bluetooth CSV file: ${e.message}")
-            e.printStackTrace()
-        }
+        sensorManager.stopListening()
+        locationManager.stopListening()
+        bluetoothManager.stopScanning()
+        dataRecorder.closeFiles()
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
         // Stop audio recording
-        if (checkBoxAudioRecording.toBoolean()) {
+        if (checkBoxAudioRecording?.toBoolean() == true) {
             audioRecorder.stopRecording()
         }
     }
 
-    override fun onSensorChanged(event: SensorEvent) {
-        when (event.sensor.type) {
-            Sensor.TYPE_HEART_RATE -> heartRate = event.values[0]
-            Sensor.TYPE_ACCELEROMETER -> {
-                accelX = event.values[0]
-                accelY = event.values[1]
-                accelZ = event.values[2]
-            }
-            Sensor.TYPE_GYROSCOPE -> {
-                gyroX = event.values[0]
-                gyroY = event.values[1]
-                gyroZ = event.values[2]
-            }
-            Sensor.TYPE_MAGNETIC_FIELD -> {
-                magnetoX = event.values[0]
-                magnetoY = event.values[1]
-                magnetoZ = event.values[2]
-            }
-            Sensor.TYPE_STEP_COUNTER -> {
-                val currentTotalSteps = event.values[0]
-                if (totalSteps == 0f) {
-                    // First reading, initialize totalSteps
-                    totalSteps = currentTotalSteps
-                    previousTotalSteps = totalSteps
-                } else {
-                    // Calculate steps taken since the last reading
-                    val stepsSinceLastReading = currentTotalSteps - totalSteps
-                    sessionSteps += stepsSinceLastReading
-                    totalSteps = currentTotalSteps
+    private fun startUpdatingUI() {
+        val handler = Handler(Looper.getMainLooper())
+        handler.post(object : Runnable {
+            override fun run() {
+                if (isRecording && SystemClock.elapsedRealtime() - lastUpdateTime > 1000) {
+                    updateUI()
+                    lastUpdateTime = SystemClock.elapsedRealtime()
                 }
-                Log.d(TAG, "Session steps: $sessionSteps")
+                handler.postDelayed(this, 1000)
             }
-            Sensor.TYPE_STEP_DETECTOR -> {
-                // Increment session steps directly
-                sessionSteps++
-                Log.d(TAG, "Step detected! Session steps: $sessionSteps")
+        })
+    }
+
+    private fun updateUI() {
+        val sensorDataTextView = findViewById<TextView>(R.id.sensorData)
+        val timestamp = System.currentTimeMillis()
+        sensorDataTextView.text = """
+        ⏱️ $timestamp
+        ❤️ ${sensorManager.heartRate}
+        🌍 ${locationManager.latitude} ${locationManager.longitude}
+        🧭 ${sensorManager.magnetoX} ${sensorManager.magnetoY} ${sensorManager.magnetoZ}
+        🔀 ${sensorManager.gyroX} ${sensorManager.gyroY} ${sensorManager.gyroZ}
+        🏎️ ${sensorManager.accelX} ${sensorManager.accelY} ${sensorManager.accelZ}
+        👣 ${sensorManager.sessionSteps}
+        📡 ${scannedDevices}
+        """.trimIndent()
+
+        val sensorDataMap = mapOf(
+            "timestamp" to timestamp,
+            "latitude" to locationManager.latitude,
+            "longitude" to locationManager.longitude,
+            "heartRate" to sensorManager.heartRate,
+            "accelX" to sensorManager.accelX,
+            "accelY" to sensorManager.accelY,
+            "accelZ" to sensorManager.accelZ,
+            "gyroX" to sensorManager.gyroX,
+            "gyroY" to sensorManager.gyroY,
+            "gyroZ" to sensorManager.gyroZ,
+            "magnetoX" to sensorManager.magnetoX,
+            "magnetoY" to sensorManager.magnetoY,
+            "magnetoZ" to sensorManager.magnetoZ,
+            "steps" to sensorManager.sessionSteps
+        )
+
+        dataRecorder.writeSensorData(sensorDataMap)
+        dataRecorder.writeBluetoothData(timestamp, scannedDevices)
+    }
+
+    private fun initWorkflowQuestions() {
+        val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val workflowString = sharedData.getString("workflowFile", "")
+        val selectedWorkflowName = sharedData.getString("selectedWorkflow", "NOT_FOUND") ?: "NOT_FOUND"
+
+        if (!workflowString.isNullOrEmpty() && selectedWorkflowName != "NOT_FOUND") {
+            try {
+                val workflow = workflowManager.initializeWorkflow(workflowString, selectedWorkflowName)
+                if (workflow != null) {
+                    workflowManager.scheduleCustomDialogs(workflow)
+                } else {
+                    Log.e(TAG, "Workflow initialization failed: Null workflow returned")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Workflow initialization failed: ${e.message}", e)
             }
-        }
-
-        if (isRecording && abs(SystemClock.elapsedRealtime() - lastUpdateTime) > 1000) {
-            val sensorData = findViewById<TextView>(R.id.sensorData)
-            val timestamp = System.currentTimeMillis()
-            sensorData.text = """
-            ⏱️$timestamp
-            ❤️ $heartRate
-            🌍 $latitude $longitude
-            🧭 $magnetoX $magnetoY $magnetoZ
-            🔀 $gyroX $gyroY $gyroZ
-            🏎️ $accelX $accelY $accelZ
-            👣 $sessionSteps
-            📡 ${scannedDevices.toString()}
-            """.trimIndent()
-
-            writeDataToCSV(
-                timestamp, latitude, longitude, heartRate,
-                accelX, accelY, accelZ,
-                magnetoX, magnetoY, magnetoZ,
-                gyroX, gyroY, gyroZ,
-                sessionSteps
-            )
-            lastUpdateTime = SystemClock.elapsedRealtime()
+        } else {
+            Log.e(TAG, "Workflow initialization failed: Missing data")
         }
     }
 
-    private fun writeDataToCSV(
-        timestamp: Long,
-        latitude: Double? = null,
-        longitude: Double? = null,
-        heartRate: Float? = null,
-        accelX: Float? = null,
-        accelY: Float? = null,
-        accelZ: Float? = null,
-        gyroX: Float? = null,
-        gyroY: Float? = null,
-        gyroZ: Float? = null,
-        magnetoX: Float? = null,
-        magnetoY: Float? = null,
-        magnetoZ: Float? = null,
-        steps: Float? = null
-    ) {
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-
-        val writeLatitude = sharedPref.getString("checkBoxLatitude", "true")
-        val writeLongitude = sharedPref.getString("checkBoxLongitude", "true")
-        val writeHeartRate = sharedPref.getString("checkBoxHeartRate", "true")
-        val writeAccelerometer = sharedPref.getString("checkBoxAccelerometer", "true")
-        val writeGyroscope = sharedPref.getString("checkBoxGyroscope", "true")
-        val writeMagnetometer = sharedPref.getString("checkBoxMagnetometer", "true")
-        val writeSteps = sharedPref.getString("checkBoxSteps", "true")
-
-        val data = StringBuilder("$timestamp,")
-        if (writeLatitude.toBoolean()) data.append("$latitude,")
-        if (writeLongitude.toBoolean()) data.append("$longitude,")
-        if (writeHeartRate.toBoolean()) data.append("$heartRate,")
-        if (writeAccelerometer.toBoolean()) data.append("$accelX,$accelY,$accelZ,")
-        if (writeGyroscope.toBoolean()) data.append("$gyroX,$gyroY,$gyroZ,")
-        if (writeMagnetometer.toBoolean()) data.append("$magnetoX,$magnetoY,$magnetoZ,")
-        if (writeSteps.toBoolean()) data.append("$steps,")
-
-        // Remove trailing comma and add newline
-        if (data.last() == ',') data.setLength(data.length - 1)
-        data.append("\n")
-
-        try {
-            csvWriter.append(data.toString())
-            csvWriter.flush() // Ensure data is written to the file immediately
-        } catch (e: IOException) {
-            Log.e(TAG, "Error writing sensor data to CSV: ${e.message}")
-            e.printStackTrace()
-        }
+    private fun getWatchId(context: Context): String {
+        return android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        // not used
-    }
-
-    override fun onLocationChanged(location: Location) {
-        if (isRecording) {
-            latitude = location.latitude
-            longitude = location.longitude
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (isRecording) {
             val builder = AlertDialog.Builder(this)
@@ -560,5 +227,13 @@ class RecordingActivity : AppCompatActivity(), SensorEventListener, LocationList
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun writeQuestionsToCSV(timestamp: Long, questionId: String, questionTitle: String, answer: String) {
+        dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer)
+    }
+
+    companion object {
+        private const val TAG = "RecordingActivity"
     }
 }
