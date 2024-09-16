@@ -1,7 +1,3 @@
-Here’s an improved and clearer version of your installation instructions based on the new structure:
-
----
-
 # Installation and Setup Instructions for SmartPlay
 
 ## 1. Enable Developer Mode on the Watch
