@@ -1,4 +1,5 @@
-// AudioRecorder.kt
+package com.example.smartplay.utils
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -27,23 +28,17 @@ class AudioRecorder(private val activity: Activity) {
         return android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
     }
 
-    fun startRecording() {
+    fun startRecording(): Boolean {
         Log.d(TAG, "startRecording() called")
 
-        if (ActivityCompat.checkSelfPermission(
-                activity, Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
-                activity, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.d(TAG, "Requesting permission")
-            ActivityCompat.requestPermissions(
-                activity, arrayOf(
-                    Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ), 200
-            )
-            return
+        if (isRecording) {
+            Log.d(TAG, "Already recording, returning")
+            return true
+        }
+
+        if (!checkPermissions()) {
+            Log.d(TAG, "Permissions not granted, returning")
+            return false
         }
 
         val sharedPref = activity.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
@@ -51,11 +46,24 @@ class AudioRecorder(private val activity: Activity) {
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(activity)
         val dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
+        if (dir == null) {
+            Log.e(TAG, "Failed to get external files directory")
+            Toast.makeText(activity, "Failed to get storage directory", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        if (!dir.exists() && !dir.mkdirs()) {
+            Log.e(TAG, "Failed to create directory: ${dir.absolutePath}")
+            Toast.makeText(activity, "Failed to create storage directory", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
         audioFile = File(dir, "${childId}_AUDIO_${watchId}_${timestamp}.3gp")
 
         Log.d(TAG, "Audio file path: ${audioFile.absolutePath}")
-        Log.d(TAG, "Directory exists: ${dir?.exists()}")
-        Log.d(TAG, "Directory can write: ${dir?.canWrite()}")
+        Log.d(TAG, "Directory exists: ${dir.exists()}")
+        Log.d(TAG, "Directory can write: ${dir.canWrite()}")
 
         mediaRecorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -67,24 +75,23 @@ class AudioRecorder(private val activity: Activity) {
                 prepare()
                 Log.d(TAG, "MediaRecorder prepared successfully, file: ${audioFile.absolutePath}")
             } catch (e: IOException) {
-                Toast.makeText(activity, "Prepare failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Prepare failed: ${e.message}")
                 e.printStackTrace()
-                return
+                return false
             }
 
             try {
                 start()
                 Log.d(TAG, "Recording started")
+                isRecording = true
+                Toast.makeText(activity, "Recording started", Toast.LENGTH_SHORT).show()
+                return true
             } catch (e: IllegalStateException) {
-                Toast.makeText(activity, "Start failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Start failed: ${e.message}")
                 e.printStackTrace()
-                return
+                return false
             }
         }
-        isRecording = true
-        Toast.makeText(activity, "Recording started", Toast.LENGTH_SHORT).show()
     }
 
     fun stopRecording(): String? {
@@ -95,39 +102,56 @@ class AudioRecorder(private val activity: Activity) {
             return null
         }
 
-        mediaRecorder?.apply {
-            try {
+        return try {
+            mediaRecorder?.apply {
                 stop()
-                Log.d(TAG, "Recording stopped")
-            } catch (e: RuntimeException) {
-                Log.e(TAG, "Stop failed: ${e.message}")
-                Toast.makeText(activity, "Stop failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
-                return null
+                release()
             }
-            release()
-            Log.d(TAG, "MediaRecorder released")
+            mediaRecorder = null
+            isRecording = false
+            Log.d(TAG, "Recording stopped")
+            Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
+
+            if (audioFile.exists() && audioFile.length() > 0) {
+                Log.d(TAG, "Audio file successfully saved: ${audioFile.absolutePath}")
+                audioFile.absolutePath
+            } else {
+                Log.e(TAG, "Audio file does not exist or is empty")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping recording: ${e.message}")
+            e.printStackTrace()
+            null
         }
-        mediaRecorder = null
-        isRecording = false
-        Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
+    }
 
-        Log.d(TAG, "Audio file saved: ${audioFile.absolutePath}")
-        Log.d(TAG, "Audio file exists: ${audioFile.exists()}")
-        Log.d(TAG, "Audio file size: ${audioFile.length()} bytes")
+    private fun checkPermissions(): Boolean {
+        val permissions = arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+//            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
 
-        return audioFile.absolutePath
+        val missingPermissions = permissions.filter {
+            ActivityCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(activity, missingPermissions.toTypedArray(), 200)
+            return false
+        }
+
+        return true
     }
 
     fun handlePermissionsResult(requestCode: Int, grantResults: IntArray) {
         if (requestCode == 200) {
-            if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                // Permission granted, you can start recording
-                Log.d(TAG, "Audio recording permission granted")
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Log.d(TAG, "All required permissions granted")
                 startRecording()
             } else {
-                Log.e(TAG, "Permission denied to record audio")
-                Toast.makeText(activity, "Permission denied to record audio", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Not all permissions were granted")
+                Toast.makeText(activity, "Permissions required for audio recording", Toast.LENGTH_SHORT).show()
             }
         }
     }

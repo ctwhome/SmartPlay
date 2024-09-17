@@ -1,6 +1,5 @@
 package com.example.smartplay
 
-import AudioRecorder
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
@@ -14,13 +13,17 @@ import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContracts
 import android.os.Handler
 import android.os.Looper
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.smartplay.sensors.CustomSensorManager
 import com.example.smartplay.location.CustomLocationManager
 import com.example.smartplay.bluetooth.CustomBluetoothManager
 import com.example.smartplay.data.DataRecorder
 import com.example.smartplay.workflow.WorkflowManager
 import com.example.smartplay.utils.QuestionRecorder
-//import com.example.smartplay.utils.AudioRecorder
+import com.example.smartplay.utils.AudioRecorder
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
@@ -73,6 +76,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         }
 
         // Start recording immediately when the activity is created
+        Log.d(TAG, "Calling startRecording from onCreate")
         startRecording()
 
         // Set initial visibility of buttons based on recording state
@@ -100,11 +104,14 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun startRecording() {
+        Log.d(TAG, "startRecording() called")
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val childId = sharedPref.getString("idChild", "000")
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
+
+        Log.d(TAG, "childId: $childId, checkBoxAudioRecording: $checkBoxAudioRecording")
 
         dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
 
@@ -113,9 +120,27 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         locationManager.startListening()
         bluetoothManager.startScanning(sharedPref.getString("frequencyRate", "1000")?.toLong() ?: 1000)
 
+        Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
         // Record audio
         if (checkBoxAudioRecording?.toBoolean() == true) {
-            audioRecorder.startRecording()
+            Log.d(TAG, "Audio recording is enabled in preferences")
+            if (checkAudioPermission()) {
+                Log.d(TAG, "Starting audio recording")
+                if (audioRecorder.startRecording()) {
+                    Log.d(TAG, "Audio recording started successfully")
+                } else {
+                    Log.e(TAG, "Failed to start audio recording")
+                    // Attempt to start recording again
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        Log.d(TAG, "Attempting to start audio recording again")
+                        audioRecorder.startRecording()
+                    }, 1000)
+                }
+            } else {
+                Log.e(TAG, "Audio recording permission not granted")
+            }
+        } else {
+            Log.d(TAG, "Audio recording is disabled in preferences")
         }
 
         isRecording = true
@@ -128,6 +153,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun stopRecording() {
+        Log.d(TAG, "stopRecording() called")
         isRecording = false
         sensorManager.stopListening()
         locationManager.stopListening()
@@ -135,10 +161,18 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         dataRecorder.closeFiles()
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "false")
+        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
         // Stop audio recording
         if (checkBoxAudioRecording?.toBoolean() == true) {
-            audioRecorder.stopRecording()
+            Log.d(TAG, "Stopping audio recording")
+            val audioFilePath = audioRecorder.stopRecording()
+            if (audioFilePath != null) {
+                Log.d(TAG, "Audio recording stopped successfully. File saved at: $audioFilePath")
+            } else {
+                Log.e(TAG, "Failed to stop audio recording or save audio file")
+            }
+        } else {
+            Log.d(TAG, "Audio recording was not active")
         }
     }
 
@@ -167,6 +201,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         🏎️ ${sensorManager.accelX} ${sensorManager.accelY} ${sensorManager.accelZ}
         👣 ${sensorManager.sessionSteps}
         📡 ${scannedDevices}
+        🎙️ ${if (audioRecorder.isRecording) "Recording" else "Not Recording"}
         """.trimIndent()
 
         val sensorDataMap = mapOf(
@@ -215,6 +250,30 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         return android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
     }
 
+    private fun checkAudioPermission(): Boolean {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting audio permission")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), AUDIO_PERMISSION_REQUEST_CODE)
+            return false
+        }
+        Log.d(TAG, "Audio permission already granted")
+        return true
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            AUDIO_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Audio recording permission granted")
+                    audioRecorder.startRecording()
+                } else {
+                    Log.e(TAG, "Audio recording permission denied")
+                }
+            }
+        }
+    }
+
     override fun onBackPressed() {
         if (isRecording) {
             val builder = AlertDialog.Builder(this)
@@ -235,5 +294,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     companion object {
         private const val TAG = "RecordingActivity"
+        private const val AUDIO_PERMISSION_REQUEST_CODE = 1001
     }
 }
