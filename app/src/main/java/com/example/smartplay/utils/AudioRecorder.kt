@@ -84,7 +84,7 @@ class AudioRecorder(private val activity: Activity) {
                 start()
                 Log.d(TAG, "Recording started")
                 isRecording = true
-                Toast.makeText(activity, "Recording started", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(activity, "Recording started", Toast.LENGTH_SHORT).show()
                 return true
             } catch (e: IllegalStateException) {
                 Log.e(TAG, "Start failed: ${e.message}")
@@ -110,7 +110,7 @@ class AudioRecorder(private val activity: Activity) {
             mediaRecorder = null
             isRecording = false
             Log.d(TAG, "Recording stopped")
-            Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(activity, "Recording stopped", Toast.LENGTH_SHORT).show()
 
             if (audioFile.exists() && audioFile.length() > 0) {
                 Log.d(TAG, "Audio file successfully saved: ${audioFile.absolutePath}")
