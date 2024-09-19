@@ -17,11 +17,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import androidx.appcompat.app.AppCompatActivity
-
-import com.example.smartplay.utils.Workflow
 import com.example.smartplay.utils.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
@@ -31,9 +27,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun getBatteryLevel(): String {
-        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-            applicationContext.registerReceiver(null, ifilter)
-        }
+        val batteryStatus: Intent? =
+                IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+                    applicationContext.registerReceiver(null, ifilter)
+                }
         val level: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
 
@@ -65,24 +62,28 @@ class SettingsActivity : AppCompatActivity() {
         // Child ID Input
         val idInput: EditText = findViewById(R.id.id_input)
         idInput.setText(sharedPref.getString("idChild", "001"))
-        idInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                saveToSharedPreferences("idChild", s.toString())
-            }
-        })
+        idInput.addTextChangedListener(
+                object : TextWatcher {
+                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                    override fun afterTextChanged(s: Editable?) {
+                        saveToSharedPreferences("idChild", s.toString())
+                    }
+                }
+        )
 
         // Frequency Input
         val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
         frequencyRate.setText(sharedPref.getString("frequencyRate", "1000"))
-        frequencyRate.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                saveToSharedPreferences("frequencyRate", s.toString())
-            }
-        })
+        frequencyRate.addTextChangedListener(
+                object : TextWatcher {
+                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                    override fun afterTextChanged(s: Editable?) {
+                        saveToSharedPreferences("frequencyRate", s.toString())
+                    }
+                }
+        )
 
         // Set focus change listeners for the EditTexts
         setupFocusChangeListener(idInput)
@@ -100,12 +101,36 @@ class SettingsActivity : AppCompatActivity() {
             spinnerWorkflow.setSelection(spinnerPosition)
         }
 
-        spinnerWorkflow.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                saveToSharedPreferences("selectedWorkflow", parent.getItemAtPosition(position).toString())
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
+        spinnerWorkflow.onItemSelectedListener =
+                object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                            parent: AdapterView<*>,
+                            view: View,
+                            position: Int,
+                            id: Long
+                    ) {
+                        val selectedWorkflowName = parent.getItemAtPosition(position).toString()
+                        saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
+
+                        // Get the workflow file content (either from cache or by reading the file)
+                        val workflowContent =
+                                FileUtils.getWorkflowFileFromSharedPreferences(
+                                        this@SettingsActivity
+                                )
+                                        ?: FileUtils.readFileFromAppSpecificDirectory(
+                                                this@SettingsActivity
+                                        )
+
+                        if (workflowContent != null) {
+                            Log.d("SettingsActivity", "Workflow file content available")
+                            // Save the full workflow content to SharedPreferences
+                            saveToSharedPreferences("workflowFile", workflowContent)
+                        } else {
+                            Log.e("SettingsActivity", "Failed to get workflow file content")
+                        }
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>) {}
+                }
 
         // Checkboxes for internal settings
         setupCheckbox(R.id.checkBoxSound, "checkBoxSound")
@@ -146,7 +171,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun getWorkflowList(): List<String> {
-        return FileUtils.readFileFromAppSpecificDirectory(this)
+        val workflowFileContent =
+                FileUtils.getWorkflowFileFromSharedPreferences(this)
+                        ?: FileUtils.readFileFromAppSpecificDirectory(this)
+
+        return workflowFileContent?.let { FileUtils.getWorkflowNamesFromContent(it) } ?: emptyList()
     }
 
     private fun saveToSharedPreferences(keyName: String, inputValue: String) {
@@ -155,13 +184,5 @@ class SettingsActivity : AppCompatActivity() {
             putString(keyName, inputValue)
             apply()
         }
-    }
-
-    private fun getWorkflowNamesFromJSON(path: String): List<String> {
-        val jsonContent = java.io.File(path).readText()
-        val gson = Gson()
-        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
-        val workflows: List<Workflow> = gson.fromJson(jsonContent, workflowListType)
-        return workflows.map { it.workflow_name }
     }
 }

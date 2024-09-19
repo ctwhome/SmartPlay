@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.hide() // Hide the action bar
 
         // Create app-specific directory before requesting permissions
-        FileUtils.createAppSpecificDirectoryIfNotExists(this)
+        // FileUtils.createAppSpecificDirectoryIfNotExists(this)
 
         if (!allPermissionsGranted()) {
             requestPermissions()
