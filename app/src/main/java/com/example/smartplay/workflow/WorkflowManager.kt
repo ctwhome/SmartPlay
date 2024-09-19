@@ -8,12 +8,16 @@ import android.util.Log
 import com.example.smartplay.data.DataRecorder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.lang.ref.WeakReference
 
-class WorkflowManager(private val context: Context, private val dataRecorder: DataRecorder) {
+class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) {
     private val TAG = "WorkflowManager"
     private lateinit var workflows: List<Workflow>
     private lateinit var selectedWorkflow: Workflow
-    private lateinit var workflowContent: String // New property to store the raw JSON string
+    private lateinit var workflowContent: String
+    private val contextRef: WeakReference<Context> = WeakReference(context)
+    private val handler = Handler(Looper.getMainLooper())
+    private val scheduledRunnables = mutableListOf<Runnable>()
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
         Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
@@ -21,7 +25,7 @@ class WorkflowManager(private val context: Context, private val dataRecorder: Da
         val workflowListType = object : TypeToken<List<Workflow>>() {}.type
 
         return try {
-            workflowContent = workflowString // Store the raw JSON string
+            workflowContent = workflowString
             workflows = gson.fromJson(workflowString, workflowListType)
             Log.d(TAG, "Parsed workflows: ${workflows.size}")
 
@@ -32,15 +36,12 @@ class WorkflowManager(private val context: Context, private val dataRecorder: Da
                     TAG,
                     "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
             )
+            Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
             selectedWorkflow
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
             null
         }
-    }
-
-    fun getWorkflowContent(): String {
-        return workflowContent
     }
 
     fun scheduleCustomDialogs(workflow: Workflow) {
@@ -52,77 +53,101 @@ class WorkflowManager(private val context: Context, private val dataRecorder: Da
     }
 
     private fun scheduleDialog(question: Question) {
-        val handler = Handler(Looper.getMainLooper())
-        val delayMillis = question.time_after_start.toLong() * 1000
+        val delayMillis = question.time_after_start_in_minutes * 1000L
+//        val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use this 60 to use minutes, after testing
         Log.d(
                 TAG,
                 "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
         )
-        handler.postDelayed(
-                {
-                    Log.d(TAG, "Showing dialog for question ${question.question_id}")
+        val runnable = Runnable {
+            Log.d(TAG, "Executing runnable for question ${question.question_id}")
+            showCustomDialog(question)
+        }
+        scheduledRunnables.add(runnable)
+        handler.postDelayed(runnable, delayMillis)
+        Log.d(TAG, "Dialog scheduled for question ${question.question_id}")
+
+        // Schedule repeated questions if frequency > 1
+        if (question.frequency > 1) {
+            for (i in 1 until question.frequency) {
+                val repeatedDelayMillis =
+                        delayMillis +
+                                (question.time_between_repetitions_in_minutes * 60 * 1000L * i)
+                val repeatedRunnable = Runnable {
+                    Log.d(
+                            TAG,
+                            "Executing repeated runnable for question ${question.question_id}, repetition ${i + 1}"
+                    )
                     showCustomDialog(question)
-                },
-                delayMillis
-        )
+                }
+                scheduledRunnables.add(repeatedRunnable)
+                handler.postDelayed(repeatedRunnable, repeatedDelayMillis)
+                Log.d(
+                        TAG,
+                        "Repeated dialog scheduled for question ${question.question_id}, repetition ${i + 1} with delay: $repeatedDelayMillis ms"
+                )
+            }
+        }
     }
 
     private fun showCustomDialog(question: Question) {
+        val context =
+                contextRef.get()
+                        ?: run {
+                            Log.e(TAG, "Context is null, cannot show dialog")
+                            return
+                        }
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
         val builder = AlertDialog.Builder(context)
-        builder.setTitle(question.question_text)
+        builder.setTitle(question.question_title)
 
-        when (question.question_type) {
-            "open" -> showOpenDialog(builder, question)
-            "multiple_choice" -> showMultipleChoiceDialog(builder, question)
-            else -> Log.e(TAG, "Unknown question type: ${question.question_type}")
-        }
-    }
-
-    private fun showOpenDialog(builder: AlertDialog.Builder, question: Question) {
-        Log.d(TAG, "Showing open dialog for question: ${question.question_id}")
-        val input = android.widget.EditText(context)
-        builder.setView(input)
-
-        builder.setPositiveButton("OK") { dialog, _ ->
-            val answer = input.text.toString()
-            recordAnswer(question, answer)
-            dialog.dismiss()
-        }
-
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
-        builder.show()
-    }
-
-    private fun showMultipleChoiceDialog(builder: AlertDialog.Builder, question: Question) {
-        Log.d(TAG, "Showing multiple choice dialog for question: ${question.question_id}")
-        val options = question.options.toTypedArray()
+        val options = question.answers.toTypedArray()
         builder.setItems(options) { dialog, which ->
             val selectedOption = options[which]
             recordAnswer(question, selectedOption)
             dialog.dismiss()
         }
         builder.show()
+        Log.d(TAG, "Custom dialog shown for question: ${question.question_id}")
     }
 
     private fun recordAnswer(question: Question, answer: String) {
         val timestamp = System.currentTimeMillis()
         dataRecorder.writeQuestionData(
                 timestamp,
-                question.question_id,
-                question.question_text,
+                question.question_id.toString(),
+                question.question_title,
                 answer
         )
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
+    }
+
+    fun cancelScheduledDialogs() {
+        Log.d(TAG, "Cancelling all scheduled dialogs")
+        scheduledRunnables.forEach { handler.removeCallbacks(it) }
+        scheduledRunnables.clear()
+        Log.d(TAG, "All scheduled dialogs cancelled")
+    }
+
+    fun rescheduleDialogs() {
+        Log.d(TAG, "Rescheduling dialogs")
+        cancelScheduledDialogs()
+        if (::selectedWorkflow.isInitialized) {
+            scheduleCustomDialogs(selectedWorkflow)
+            Log.d(TAG, "Dialogs rescheduled for workflow: ${selectedWorkflow.workflow_name}")
+        } else {
+            Log.e(TAG, "Cannot reschedule dialogs: selectedWorkflow is not initialized")
+        }
     }
 }
 
 data class Workflow(val workflow_name: String, val questions: List<Question>)
 
 data class Question(
-        val question_id: String,
-        val question_text: String,
-        val question_type: String,
-        val time_after_start: Int,
-        val options: List<String> = emptyList()
+        val question_id: Int,
+        val question_title: String,
+        val answers: List<String>,
+        val time_after_start_in_minutes: Int,
+        val frequency: Int,
+        val time_between_repetitions_in_minutes: Int
 )

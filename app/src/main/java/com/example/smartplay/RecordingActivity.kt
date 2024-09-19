@@ -170,6 +170,26 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         // Update sensor data visibility
         updateSensorDataVisibility()
+
+        // Test dialog
+        // Handler(Looper.getMainLooper())
+        //         .postDelayed(
+        //                 {
+        //                     Log.d(TAG, "Showing test dialog")
+        //                     runOnUiThread {
+        //                         AlertDialog.Builder(this)
+        //                                 .setTitle("Test Dialog")
+        //                                 .setMessage(
+        //                                         "This is a test dialog to verify dialog
+        // functionality."
+        //                                 )
+        //                                 .setPositiveButton("OK") { dialog, _ -> dialog.dismiss()
+        // }
+        //                                 .show()
+        //                     }
+        //                 },
+        //                 3000
+        //         ) // Show after 10 seconds
     }
 
     private fun stopRecording() {
@@ -179,6 +199,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         locationManager.stopListening()
         bluetoothManager.stopScanning()
         dataRecorder.closeFiles()
+        workflowManager.cancelScheduledDialogs()
 
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
@@ -256,23 +277,20 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun initWorkflowQuestions() {
-//        Log.d(TAG, "initWorkflowQuestions() called")
+        Log.d(TAG, "initWorkflowQuestions() called")
         val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         // Log all keys in shared preferences
-//        Log.d(TAG, "All keys in shared preferences:")
+        Log.d(TAG, "All keys in shared preferences:")
         sharedData.all.forEach { (key, value) -> Log.d(TAG, "$key: $value") }
 
-        val workflowFileContent = sharedData.getString("workflowFile", null)
         val selectedWorkflowName = sharedData.getString("selectedWorkflow", null)
+        val workflowFileContent = sharedData.getString("workflowFile", null)
 
-//        Log.d(TAG, "Workflow file content: $workflowFileContent")
-//        Log.d(TAG, "Selected workflow name: $selectedWorkflowName")
-//        Log.d(TAG, "Workflow file content length: ${workflowFileContent?.length ?: 0}")
-//        Log.d(TAG, "Is workflow file content null: ${workflowFileContent == null}")
-//        Log.d(TAG, "Is selected workflow name null: ${selectedWorkflowName == null}")
+        Log.d(TAG, "Selected workflow name: $selectedWorkflowName")
+        Log.d(TAG, "Workflow file content length: ${workflowFileContent?.length ?: 0}")
 
-        if (workflowFileContent != null && selectedWorkflowName != null) {
+        if (selectedWorkflowName != null && workflowFileContent != null) {
             try {
                 val workflow =
                         workflowManager.initializeWorkflow(
@@ -280,10 +298,10 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                                 selectedWorkflowName
                         )
                 if (workflow != null) {
-//                    Log.d(TAG, "Workflow initialized successfully: ${workflow.workflow_name}")
-//                    Log.d(TAG, "Number of questions: ${workflow.questions.size}")
+                    Log.d(TAG, "Workflow initialized successfully: ${workflow.workflow_name}")
+                    Log.d(TAG, "Number of questions: ${workflow.questions.size}")
                     workflowManager.scheduleCustomDialogs(workflow)
-//                    Log.d(TAG, "Custom dialogs scheduled")
+                    Log.d(TAG, "Custom dialogs scheduled")
                 } else {
                     Log.e(TAG, "Workflow initialization failed: Null workflow returned")
                 }
@@ -292,12 +310,11 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                 e.printStackTrace()
             }
         } else {
-            Log.e(TAG, "Workflow initialization failed: Missing data")
-            if (workflowFileContent == null) {
-                Log.e(TAG, "Workflow file content is null")
-            }
             if (selectedWorkflowName == null) {
                 Log.e(TAG, "Selected workflow name is null")
+            }
+            if (workflowFileContent == null) {
+                Log.e(TAG, "Workflow file content is null")
             }
         }
     }
@@ -366,6 +383,29 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             answer: String
     ) {
         dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy() called")
+        workflowManager.cancelScheduledDialogs()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause() called")
+        workflowManager.cancelScheduledDialogs()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume() called")
+        if (isRecording) {
+            Log.d(TAG, "Recording is active, rescheduling dialogs")
+            workflowManager.rescheduleDialogs()
+        } else {
+            Log.d(TAG, "Recording is not active, dialogs not rescheduled")
+        }
     }
 
     companion object {
