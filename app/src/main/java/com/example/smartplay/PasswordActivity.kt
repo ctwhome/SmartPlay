@@ -48,12 +48,16 @@ class PasswordActivity : AppCompatActivity() {
 
     private fun checkPassword(enteredPassword: String) {
         if (enteredPassword == correctPassword) {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
+            setResult(RESULT_OK)
             finish()
         } else {
             Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
             findViewById<EditText>(R.id.password_input).text.clear()
         }
+    }
+
+    override fun onBackPressed() {
+        setResult(RESULT_CANCELED)
+        super.onBackPressed()
     }
 }

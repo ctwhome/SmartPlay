@@ -39,9 +39,15 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private var scannedDevices: Map<String, Int> = emptyMap()
 
     private val passwordActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            stopRecording()
-            finish() // Navigate back to the previous activity (settings)
+        when (result.resultCode) {
+            RESULT_OK -> {
+                stopRecording()
+                finish() // Navigate back to the previous activity (settings)
+            }
+            RESULT_CANCELED -> {
+                // User canceled, continue recording
+                Log.d(TAG, "Password entry canceled, continuing recording")
+            }
         }
     }
 
