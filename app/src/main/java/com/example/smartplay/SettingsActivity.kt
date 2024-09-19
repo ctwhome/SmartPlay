@@ -120,6 +120,7 @@ class SettingsActivity : AppCompatActivity() {
         setupCheckbox(R.id.checkBoxMagnetometer, "checkBoxMagnetometer")
         setupCheckbox(R.id.checkBoxLocation, "checkBoxLocation")
         setupCheckbox(R.id.checkBoxBluetoothProximity, "checkBoxBluetoothProximity")
+        setupCheckbox(R.id.checkBoxDisplaySensorValues, "checkBoxDisplaySensorValues")
     }
 
     private fun setupCheckbox(checkboxId: Int, preferenceName: String) {

@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.Manifest
 import android.content.pm.PackageManager
+import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.smartplay.sensors.CustomSensorManager
@@ -33,6 +34,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var dataRecorder: DataRecorder
     private lateinit var workflowManager: WorkflowManager
     private lateinit var audioRecorder: AudioRecorder
+    private lateinit var sensorDataTextView: TextView
 
     private var isRecording = false
     private var lastUpdateTime: Long = 0
@@ -62,6 +64,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         val startButton = findViewById<Button>(R.id.startButton)
         val stopButton = findViewById<Button>(R.id.stopButton)
+        sensorDataTextView = findViewById(R.id.sensorData)
 
         initializeManagers()
 
@@ -88,6 +91,9 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         // Set initial visibility of buttons based on recording state
         startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
         stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
+
+        // Set initial visibility of sensor data
+        updateSensorDataVisibility()
     }
 
     private fun initializeManagers() {
@@ -156,6 +162,9 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         // Start updating UI
         startUpdatingUI()
+
+        // Update sensor data visibility
+        updateSensorDataVisibility()
     }
 
     private fun stopRecording() {
@@ -196,7 +205,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun updateUI() {
-        val sensorDataTextView = findViewById<TextView>(R.id.sensorData)
         val timestamp = System.currentTimeMillis()
         sensorDataTextView.text = """
         ⏱️ $timestamp
@@ -229,6 +237,12 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         dataRecorder.writeSensorData(sensorDataMap)
         dataRecorder.writeBluetoothData(timestamp, scannedDevices)
+    }
+
+    private fun updateSensorDataVisibility() {
+        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+        val displaySensorValues = sharedPref.getString("checkBoxDisplaySensorValues", "false")?.toBoolean() ?: true
+        sensorDataTextView.visibility = if (displaySensorValues) View.VISIBLE else View.GONE
     }
 
     private fun initWorkflowQuestions() {
