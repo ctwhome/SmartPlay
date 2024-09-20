@@ -35,6 +35,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var workflowManager: WorkflowManager
     private lateinit var audioRecorder: AudioRecorder
     private lateinit var sensorDataTextView: TextView
+    private lateinit var startButton: Button
+    private lateinit var stopButton: Button
 
     private var isRecording = false
     private var lastUpdateTime: Long = 0
@@ -48,8 +50,13 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                         finish() // Navigate back to the previous activity (settings)
                     }
                     RESULT_CANCELED -> {
-                        // User canceled, continue recording
-                        Log.d(TAG, "Password entry canceled, continuing recording")
+                        // User canceled or entered incorrect password, continue recording
+                        Log.d(
+                                TAG,
+                                "Password entry canceled or incorrect, continuing recording without changes"
+                        )
+                        // The PasswordActivity will automatically finish itself, so we don't need
+                        // to do anything here
                     }
                 }
             }
@@ -63,8 +70,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         // Keep this activity in focus
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val startButton = findViewById<Button>(R.id.startButton)
-        val stopButton = findViewById<Button>(R.id.stopButton)
+        startButton = findViewById(R.id.startButton)
+        stopButton = findViewById(R.id.stopButton)
         sensorDataTextView = findViewById(R.id.sensorData)
 
         initializeManagers()
@@ -79,8 +86,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         stopButton.setOnClickListener {
             if (isRecording) {
-                startButton.visibility = Button.VISIBLE
-                stopButton.visibility = Button.GONE
                 showPasswordActivity()
             }
         }
@@ -90,8 +95,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         startRecording()
 
         // Set initial visibility of buttons based on recording state
-        startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
-        stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
+        updateButtonVisibility()
 
         // Set initial visibility of sensor data
         updateSensorDataVisibility()
@@ -171,25 +175,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         // Update sensor data visibility
         updateSensorDataVisibility()
 
-        // Test dialog
-        // Handler(Looper.getMainLooper())
-        //         .postDelayed(
-        //                 {
-        //                     Log.d(TAG, "Showing test dialog")
-        //                     runOnUiThread {
-        //                         AlertDialog.Builder(this)
-        //                                 .setTitle("Test Dialog")
-        //                                 .setMessage(
-        //                                         "This is a test dialog to verify dialog
-        // functionality."
-        //                                 )
-        //                                 .setPositiveButton("OK") { dialog, _ -> dialog.dismiss()
-        // }
-        //                                 .show()
-        //                     }
-        //                 },
-        //                 3000
-        //         ) // Show after 10 seconds
+        // Update button visibility
+        updateButtonVisibility()
     }
 
     private fun stopRecording() {
@@ -214,6 +201,16 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             }
         } else {
             Log.d(TAG, "Audio recording was not active")
+        }
+
+        // Update button visibility
+        updateButtonVisibility()
+    }
+
+    private fun updateButtonVisibility() {
+        runOnUiThread {
+            startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
+            stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
         }
     }
 
@@ -380,9 +377,10 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             timestamp: Long,
             questionId: String,
             questionTitle: String,
-            answer: String
+            answer: String,
+            state: String
     ) {
-        dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer)
+        dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer, state)
     }
 
     override fun onDestroy() {

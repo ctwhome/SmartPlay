@@ -54,7 +54,8 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
 
     private fun scheduleDialog(question: Question) {
         val delayMillis = question.time_after_start_in_minutes * 1000L
-//        val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use this 60 to use minutes, after testing
+        //        val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use
+        // this 60 to use minutes, after testing
         Log.d(
                 TAG,
                 "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
@@ -98,6 +99,10 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
                             return
                         }
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
+
+        // Record that the question is being asked
+        recordQuestionAsked(question)
+
         val builder = AlertDialog.Builder(context)
         builder.setTitle(question.question_title)
 
@@ -111,13 +116,27 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
         Log.d(TAG, "Custom dialog shown for question: ${question.question_id}")
     }
 
-    private fun recordAnswer(question: Question, answer: String) {
+    private fun recordQuestionAsked(question: Question) {
         val timestamp = System.currentTimeMillis()
+        Log.d(TAG, "Recording question asked: ${question.question_id} at timestamp: $timestamp")
         dataRecorder.writeQuestionData(
                 timestamp,
                 question.question_id.toString(),
                 question.question_title,
-                answer
+                "ASKED",
+                "asked"
+        )
+    }
+
+    private fun recordAnswer(question: Question, answer: String) {
+        val timestamp = System.currentTimeMillis()
+        Log.d(TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp")
+        dataRecorder.writeQuestionData(
+                timestamp,
+                question.question_id.toString(),
+                question.question_title,
+                answer,
+                "answered"
         )
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }

@@ -49,11 +49,11 @@ class PasswordActivity : AppCompatActivity() {
     private fun checkPassword(enteredPassword: String) {
         if (enteredPassword == correctPassword) {
             setResult(RESULT_OK)
-            finish()
         } else {
             Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
             findViewById<EditText>(R.id.password_input).text.clear()
         }
+        finish()
     }
 
     override fun onBackPressed() {

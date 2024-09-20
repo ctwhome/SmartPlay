@@ -21,7 +21,12 @@ class DataRecorder(private val context: Context) {
         initializeQuestionFile(dir, childId, watchId, timestamp)
     }
 
-    private fun initializeSensorFile(dir: File?, childId: String, watchId: String, timestamp: Long) {
+    private fun initializeSensorFile(
+            dir: File?,
+            childId: String,
+            watchId: String,
+            timestamp: Long
+    ) {
         val sensorFile = File(dir, "${childId}_SENSORS_${watchId}_$timestamp.csv")
         try {
             sensorCsvWriter = FileWriter(sensorFile, true)
@@ -33,7 +38,12 @@ class DataRecorder(private val context: Context) {
         }
     }
 
-    private fun initializeBluetoothFile(dir: File?, childId: String, watchId: String, timestamp: Long) {
+    private fun initializeBluetoothFile(
+            dir: File?,
+            childId: String,
+            watchId: String,
+            timestamp: Long
+    ) {
         val btFile = File(dir, "${childId}_BT_${watchId}_$timestamp.csv")
         try {
             btCsvWriter = FileWriter(btFile, true)
@@ -45,12 +55,17 @@ class DataRecorder(private val context: Context) {
         }
     }
 
-    private fun initializeQuestionFile(dir: File?, childId: String, watchId: String, timestamp: Long) {
+    private fun initializeQuestionFile(
+            dir: File?,
+            childId: String,
+            watchId: String,
+            timestamp: Long
+    ) {
         val questionFile = File(dir, "${childId}_QUESTIONS_${watchId}_$timestamp.csv")
         try {
             questionCsvWriter = FileWriter(questionFile, true)
             if (questionFile.length() == 0L) {
-                questionCsvWriter.append("timestamp,questionID,questionText,answer\n").flush()
+                questionCsvWriter.append("timestamp,questionID,questionText,answer,state\n").flush()
             }
         } catch (e: IOException) {
             Log.e(TAG, "Error creating question CSV file: ${e.message}")
@@ -62,11 +77,16 @@ class DataRecorder(private val context: Context) {
         val header = StringBuilder("timestamp,")
 
         if (sharedPref.getString("checkBoxLatitude", "true").toBoolean()) header.append("latitude,")
-        if (sharedPref.getString("checkBoxLongitude", "true").toBoolean()) header.append("longitude,")
-        if (sharedPref.getString("checkBoxHeartRate", "true").toBoolean()) header.append("heartRate,")
-        if (sharedPref.getString("checkBoxAccelerometer", "true").toBoolean()) header.append("accelX,accelY,accelZ,")
-        if (sharedPref.getString("checkBoxGyroscope", "true").toBoolean()) header.append("gyroX,gyroY,gyroZ,")
-        if (sharedPref.getString("checkBoxMagnetometer", "true").toBoolean()) header.append("magnetoX,magnetoY,magnetoZ,")
+        if (sharedPref.getString("checkBoxLongitude", "true").toBoolean())
+                header.append("longitude,")
+        if (sharedPref.getString("checkBoxHeartRate", "true").toBoolean())
+                header.append("heartRate,")
+        if (sharedPref.getString("checkBoxAccelerometer", "true").toBoolean())
+                header.append("accelX,accelY,accelZ,")
+        if (sharedPref.getString("checkBoxGyroscope", "true").toBoolean())
+                header.append("gyroX,gyroY,gyroZ,")
+        if (sharedPref.getString("checkBoxMagnetometer", "true").toBoolean())
+                header.append("magnetoX,magnetoY,magnetoZ,")
         if (sharedPref.getString("checkBoxSteps", "true").toBoolean()) header.append("steps,")
 
         if (header.last() == ',') header.setLength(header.length - 1)
@@ -79,16 +99,24 @@ class DataRecorder(private val context: Context) {
         val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val data = StringBuilder("${sensorData["timestamp"]},")
 
-        if (sharedPref.getString("checkBoxLatitude", "true").toBoolean()) data.append("${sensorData["latitude"]},")
-        if (sharedPref.getString("checkBoxLongitude", "true").toBoolean()) data.append("${sensorData["longitude"]},")
-        if (sharedPref.getString("checkBoxHeartRate", "true").toBoolean()) data.append("${sensorData["heartRate"]},")
+        if (sharedPref.getString("checkBoxLatitude", "true").toBoolean())
+                data.append("${sensorData["latitude"]},")
+        if (sharedPref.getString("checkBoxLongitude", "true").toBoolean())
+                data.append("${sensorData["longitude"]},")
+        if (sharedPref.getString("checkBoxHeartRate", "true").toBoolean())
+                data.append("${sensorData["heartRate"]},")
         if (sharedPref.getString("checkBoxAccelerometer", "true").toBoolean())
-            data.append("${sensorData["accelX"]},${sensorData["accelY"]},${sensorData["accelZ"]},")
+                data.append(
+                        "${sensorData["accelX"]},${sensorData["accelY"]},${sensorData["accelZ"]},"
+                )
         if (sharedPref.getString("checkBoxGyroscope", "true").toBoolean())
-            data.append("${sensorData["gyroX"]},${sensorData["gyroY"]},${sensorData["gyroZ"]},")
+                data.append("${sensorData["gyroX"]},${sensorData["gyroY"]},${sensorData["gyroZ"]},")
         if (sharedPref.getString("checkBoxMagnetometer", "true").toBoolean())
-            data.append("${sensorData["magnetoX"]},${sensorData["magnetoY"]},${sensorData["magnetoZ"]},")
-        if (sharedPref.getString("checkBoxSteps", "true").toBoolean()) data.append("${sensorData["steps"]},")
+                data.append(
+                        "${sensorData["magnetoX"]},${sensorData["magnetoY"]},${sensorData["magnetoZ"]},"
+                )
+        if (sharedPref.getString("checkBoxSteps", "true").toBoolean())
+                data.append("${sensorData["steps"]},")
 
         if (data.last() == ',') data.setLength(data.length - 1)
         data.append("\n")
@@ -112,9 +140,21 @@ class DataRecorder(private val context: Context) {
         }
     }
 
-    fun writeQuestionData(timestamp: Long, questionID: String, questionText: String, answer: String) {
+    fun writeQuestionData(
+            timestamp: Long,
+            questionID: String,
+            questionText: String,
+            answer: String,
+            state: String
+    ) {
         try {
-            questionCsvWriter.append("$timestamp,$questionID,$questionText,$answer\n").flush()
+            questionCsvWriter
+                    .append("$timestamp,$questionID,$questionText,$answer,$state\n")
+                    .flush()
+            Log.d(
+                    TAG,
+                    "Question data written to CSV: Timestamp=$timestamp, QuestionID=$questionID, Answer=$answer, State=$state"
+            )
         } catch (e: IOException) {
             Log.e(TAG, "Error writing question data to CSV: ${e.message}")
         }
