@@ -21,6 +21,9 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.smartplay.utils.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
+
+    private lateinit var permissionManager: PermissionManager
+
     private fun showBatteryLevel() {
         val batteryLevel = getBatteryLevel()
         findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
@@ -50,6 +53,31 @@ class SettingsActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
+        permissionManager = PermissionManager(this)
+
+        if (!permissionManager.allPermissionsGranted()) {
+            permissionManager.requestPermissions()
+        } else {
+            initializeSettings()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+            requestCode: Int,
+            permissions: Array<String>,
+            grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)) {
+            initializeSettings()
+        } else {
+            // Handle the case where some permissions are not granted
+            // You might want to disable some functionality or show a message
+            initializeSettings() // Still initialize with limited functionality
+        }
+    }
+
+    private fun initializeSettings() {
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         // Button Record

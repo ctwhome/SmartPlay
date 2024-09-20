@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
@@ -37,6 +38,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var sensorDataTextView: TextView
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
+    private lateinit var sharedPreferences: SharedPreferences
 
     private var isRecording = false
     private var lastUpdateTime: Long = 0
@@ -74,6 +76,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         stopButton = findViewById(R.id.stopButton)
         sensorDataTextView = findViewById(R.id.sensorData)
 
+        sharedPreferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
         initializeManagers()
 
         startButton.setOnClickListener {
@@ -106,7 +110,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         locationManager = CustomLocationManager(this)
         bluetoothManager = CustomBluetoothManager(this)
         dataRecorder = DataRecorder(this)
-        workflowManager = WorkflowManager(this, dataRecorder)
+        workflowManager = WorkflowManager(this, dataRecorder, sharedPreferences)
         audioRecorder = AudioRecorder(this)
 
         // Set up Bluetooth scan result listener
@@ -120,9 +124,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private fun startRecording() {
         Log.d(TAG, "startRecording() called")
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val childId = sharedPref.getString("idChild", "000")
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
+        val childId = sharedPreferences.getString("idChild", "000")
+        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         val timestamp = System.currentTimeMillis()
         val watchId = getWatchId(this)
 
@@ -134,7 +137,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         sensorManager.startListening()
         locationManager.startListening()
         bluetoothManager.startScanning(
-                sharedPref.getString("frequencyRate", "1000")?.toLong() ?: 1000
+                sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
         )
 
         Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
@@ -188,8 +191,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         dataRecorder.closeFiles()
         workflowManager.cancelScheduledDialogs()
 
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        val checkBoxAudioRecording = sharedPref.getString("checkBoxAudioRecording", "true")
+        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         // Stop audio recording
         if (checkBoxAudioRecording?.toBoolean() == true) {
             Log.d(TAG, "Stopping audio recording")
@@ -267,22 +269,21 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun updateSensorDataVisibility() {
-        val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val displaySensorValues =
-                sharedPref.getString("checkBoxDisplaySensorValues", "false")?.toBoolean() ?: true
+                sharedPreferences.getString("checkBoxDisplaySensorValues", "false")?.toBoolean()
+                        ?: true
         sensorDataTextView.visibility = if (displaySensorValues) View.VISIBLE else View.GONE
     }
 
     private fun initWorkflowQuestions() {
         Log.d(TAG, "initWorkflowQuestions() called")
-        val sharedData = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         // Log all keys in shared preferences
         Log.d(TAG, "All keys in shared preferences:")
-        sharedData.all.forEach { (key, value) -> Log.d(TAG, "$key: $value") }
+        sharedPreferences.all.forEach { (key, value) -> Log.d(TAG, "$key: $value") }
 
-        val selectedWorkflowName = sharedData.getString("selectedWorkflow", null)
-        val workflowFileContent = sharedData.getString("workflowFile", null)
+        val selectedWorkflowName = sharedPreferences.getString("selectedWorkflow", null)
+        val workflowFileContent = sharedPreferences.getString("workflowFile", null)
 
         Log.d(TAG, "Selected workflow name: $selectedWorkflowName")
         Log.d(TAG, "Workflow file content length: ${workflowFileContent?.length ?: 0}")

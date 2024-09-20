@@ -2,15 +2,24 @@ package com.example.smartplay.workflow
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.SharedPreferences
+import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
+import com.example.smartplay.R
 import com.example.smartplay.data.DataRecorder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.ref.WeakReference
 
-class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) {
+class WorkflowManager(
+        context: Context,
+        private val dataRecorder: DataRecorder,
+        private val sharedPreferences: SharedPreferences
+) {
     private val TAG = "WorkflowManager"
     private lateinit var workflows: List<Workflow>
     private lateinit var selectedWorkflow: Workflow
@@ -18,6 +27,11 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
     private val contextRef: WeakReference<Context> = WeakReference(context)
     private val handler = Handler(Looper.getMainLooper())
     private val scheduledRunnables = mutableListOf<Runnable>()
+
+    companion object {
+        const val PREF_VIBRATION = "checkBoxVibration"
+        const val PREF_SOUND = "checkBoxSound"
+    }
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
         Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
@@ -54,8 +68,8 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
 
     private fun scheduleDialog(question: Question) {
         val delayMillis = question.time_after_start_in_minutes * 1000L
-        //        val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use
-        // this 60 to use minutes, after testing
+        // val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use this 60
+        // to use minutes, after testing
         Log.d(
                 TAG,
                 "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
@@ -100,6 +114,18 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
                         }
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
 
+        // Make sound and vibrate
+        val checkBoxVibration = sharedPreferences.getString(PREF_VIBRATION, "true")
+        Log.d(TAG, "Vibration enabled: $checkBoxVibration")
+        if (checkBoxVibration?.toBoolean() == true) {
+            vibrate(context)
+        }
+        val checkBoxSound = sharedPreferences.getString(PREF_SOUND, "true")
+        Log.d(TAG, "Sound enabled: $checkBoxSound")
+        if (checkBoxSound?.toBoolean() == true) {
+            playSound(context)
+        }
+
         // Record that the question is being asked
         recordQuestionAsked(question)
 
@@ -114,6 +140,32 @@ class WorkflowManager(context: Context, private val dataRecorder: DataRecorder) 
         }
         builder.show()
         Log.d(TAG, "Custom dialog shown for question: ${question.question_id}")
+    }
+
+    private fun playSound(context: Context) {
+        try {
+            Log.d(TAG, "Attempting to play fallback sound")
+            val mediaPlayer = MediaPlayer.create(context, R.raw.fallback_sound)
+            if (mediaPlayer == null) {
+                Log.e(TAG, "Fallback MediaPlayer creation failed")
+                return
+            }
+            mediaPlayer.setOnCompletionListener { mp ->
+                Log.d(TAG, "Fallback sound playback completed")
+                mp.release()
+            }
+            mediaPlayer.start()
+            Log.d(TAG, "Fallback sound playback started")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error playing fallback sound: ${e.message}")
+        }
+    }
+
+    private fun vibrate(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+        vibrator.vibrate(vibrationEffect)
+        Log.d(TAG, "Vibration executed")
     }
 
     private fun recordQuestionAsked(question: Question) {
