@@ -77,11 +77,7 @@ fun scheduleRepetitions(
     // Changed from minutes to seconds for testing purposes
     val repetitionInterval =
             question.time_between_repetitions_in_minutes * 1000L // Now treated as seconds
-
-    Log.d(
-            TAG,
-            "Scheduling repetitions for question ${question.question_id}: frequency=$frequency, interval=$repetitionInterval ms"
-    )
+    Log.d(TAG, "Scheduling repetitions for question ${question.question_id}: frequency=$frequency, interval=$repetitionInterval ms")
 
     for (i in 1 until frequency) {
         val delay = i * repetitionInterval
@@ -195,11 +191,7 @@ fun showMessageDialog(context: Context, question: Question, questionRecorder: Qu
 fun playSound(context: Context) {
     try {
         Log.d(TAG, "Attempting to play fallback sound")
-        val mediaPlayer =
-                MediaPlayer.create(
-                        context,
-                        R.raw.fallback_sound
-                ) // Ensure fallback_sound is a valid sound file in res/raw
+        val mediaPlayer = MediaPlayer.create( context, R.raw.fallback_sound ) // Ensure fallback_sound is a valid sound file in res/raw
         if (mediaPlayer == null) {
             Log.e(TAG, "Fallback MediaPlayer creation failed")
             return

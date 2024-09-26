@@ -54,7 +54,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                     RESULT_CANCELED -> {
                         // User canceled or entered incorrect password, continue recording
                         Log.d(
-                                TAG,
+                                "PasswordActivity",
                                 "Password entry canceled or incorrect, continuing recording without changes"
                         )
                         // The PasswordActivity will automatically finish itself, so we don't need
@@ -123,7 +123,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun startRecording() {
-        Log.d(TAG, "startRecording() called")
+        //        Log.d(TAG, "startRecording() called")
         val childId = sharedPreferences.getString("idChild", "000")
         val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         val timestamp = System.currentTimeMillis()
@@ -140,7 +140,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                 sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
         )
 
-        Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
+        //        Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
         // Record audio
         if (checkBoxAudioRecording?.toBoolean() == true) {
             Log.d(TAG, "Audio recording is enabled in preferences")
@@ -276,11 +276,11 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun initWorkflowQuestions() {
-        Log.d(TAG, "initWorkflowQuestions() called")
+        //        Log.d(TAG, "initWorkflowQuestions() called")
 
         // Log all keys in shared preferences
         Log.d(TAG, "All keys in shared preferences:")
-        sharedPreferences.all.forEach { (key, value) -> Log.d(TAG, "$key: $value") }
+        sharedPreferences.all.forEach { (key, value) -> Log.d(TAG, "KEY $key: $value") }
 
         val selectedWorkflowName = sharedPreferences.getString("selectedWorkflow", null)
         val workflowFileContent = sharedPreferences.getString("workflowFile", null)
