@@ -1,5 +1,5 @@
 # SmartPlay
-Android OS Wear Application to measure children's activity when playing
+Android OS Wear Application to measure children's activity when playing.
 
 ## Setting Workflows
 Inside the Device File Explorer, set the workflows file in this path:
@@ -7,6 +7,9 @@ Inside the Device File Explorer, set the workflows file in this path:
 /storage/emulated/0/Android/data/com.example.smartplay/files/workflows.json
 ```
 You can find the workflows.json demo file in the app/sampledata folder of this repository.
+
+## Notes
+- Ensure the watch's media sound is enabled to listen to notifications.
 
 ## Installing and Setting Up SmartPlay
 
