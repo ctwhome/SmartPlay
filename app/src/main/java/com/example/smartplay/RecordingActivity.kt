@@ -19,12 +19,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.smartplay.bluetooth.CustomBluetoothManager
+import com.example.smartplay.sensors.CustomBluetoothManager
 import com.example.smartplay.data.DataRecorder
-import com.example.smartplay.location.CustomLocationManager
+import com.example.smartplay.sensors.CustomLocationManager
 import com.example.smartplay.sensors.CustomSensorManager
-import com.example.smartplay.utils.AudioRecorder
-import com.example.smartplay.utils.QuestionRecorder
+import com.example.smartplay.data.AudioRecorder
+import com.example.smartplay.workflow.QuestionRecorder
 import com.example.smartplay.workflow.WorkflowManager
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {

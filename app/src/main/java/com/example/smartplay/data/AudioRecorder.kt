@@ -1,4 +1,4 @@
-package com.example.smartplay.utils
+package com.example.smartplay.data
 
 import android.Manifest
 import android.app.Activity

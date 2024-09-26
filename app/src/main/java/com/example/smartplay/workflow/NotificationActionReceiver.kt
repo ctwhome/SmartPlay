@@ -1,4 +1,4 @@
-package com.example.smartplay
+package com.example.smartplay.workflow
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -18,7 +18,8 @@ import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.smartplay.utils.FileUtils
+import com.example.smartplay.sensors.PermissionManager
+import com.example.smartplay.workflow.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
 

@@ -1,4 +1,4 @@
-package com.example.smartplay
+package com.example.smartplay.workflow
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.example.smartplay.R
 
 class NotificationService : Service() {
     private val CHANNEL_ID = "NotificationChannel"

@@ -1,5 +1,5 @@
 
-package com.example.smartplay
+package com.example.smartplay.sensors
 
 import android.Manifest
 import android.app.Activity

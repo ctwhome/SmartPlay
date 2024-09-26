@@ -1,4 +1,4 @@
-package com.example.smartplay.location
+package com.example.smartplay.sensors
 
 import android.content.Context
 import android.location.Location

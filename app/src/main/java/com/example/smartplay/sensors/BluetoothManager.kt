@@ -1,4 +1,4 @@
-package com.example.smartplay.bluetooth
+package com.example.smartplay.sensors
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
