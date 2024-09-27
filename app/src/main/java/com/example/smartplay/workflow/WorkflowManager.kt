@@ -70,7 +70,10 @@ class WorkflowManager(
         val delayMillis = question.time_after_start_in_minutes * 1000L
         // val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use this 60
         // to use minutes, after testing
-        Log.d(TAG,"Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms")
+        Log.d(
+                TAG,
+                "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
+        )
         val runnable = Runnable {
             Log.d(TAG, "Executing runnable for question ${question.question_id}")
             showCustomDialog(question)
@@ -103,7 +106,9 @@ class WorkflowManager(
     }
 
     private fun showCustomDialog(question: Question) {
-        val context = contextRef.get() ?: run {
+        val context =
+                contextRef.get()
+                        ?: run {
                             Log.e(TAG, "Context is null, cannot show dialog")
                             return
                         }

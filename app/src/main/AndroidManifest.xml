@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- Removed WRITE/READ_EXTERNAL_STORAGE since it's deprecated -->
     <!-- Use app-specific storage or MediaStore for storing files -->
@@ -34,7 +35,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light">
 
-<!--        default activity-->
+        <!--        default activity-->
         <activity
             android:name=".SettingsActivity"
             android:exported="true"
@@ -47,6 +48,17 @@
 
         <activity android:name=".PasswordActivity" android:theme="@style/Theme.AppCompat.Light"/>
         <activity android:name=".RecordingActivity" android:theme="@style/AppTheme"/>
+
+        <!-- Updated NotificationService declaration -->
+        <service
+            android:name=".workflow.NotificationService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Add NotificationActionReceiver declaration -->
+        <receiver
+            android:name=".workflow.NotificationActionReceiver"
+            android:exported="false" />
 
     </application>
 

@@ -1,29 +1,28 @@
 package com.example.smartplay
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.Spinner
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.example.smartplay.sensors.PermissionManager
 import com.example.smartplay.workflow.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var permissionManager: PermissionManager
+    private val PERMISSION_REQUEST_CODE = 123
 
     private fun showBatteryLevel() {
         val batteryLevel = getBatteryLevel()
@@ -69,12 +68,18 @@ class SettingsActivity : AppCompatActivity() {
             grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)) {
-            initializeSettings()
-        } else {
-            // Handle the case where some permissions are not granted
-            // You might want to disable some functionality or show a message
-            initializeSettings() // Still initialize with limited functionality
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                initializeSettings()
+            } else {
+                Toast.makeText(
+                                this,
+                                "Some permissions were not granted. Some features may not work properly.",
+                                Toast.LENGTH_LONG
+                        )
+                        .show()
+                initializeSettings() // Still initialize with limited functionality
+            }
         }
     }
 
