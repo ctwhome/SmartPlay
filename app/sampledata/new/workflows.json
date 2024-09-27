@@ -1,0 +1,19 @@
+[
+  {
+    "workflow_name": "Ctw",
+    "questions": [
+      {
+        "question_id": 1,
+        "question_title": "How do you feel?",
+        "answers": [
+          "🔥",
+          "🚀",
+          "🎹"
+        ],
+        "time_after_start": 1,
+        "frequency": 3,
+        "time_between_repetitions": 5
+      }
+    ]
+  }
+]

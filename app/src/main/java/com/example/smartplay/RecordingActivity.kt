@@ -1,7 +1,7 @@
 package com.example.smartplay
 
 import android.Manifest
-import android.app.AlertDialog
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -231,6 +231,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         )
     }
 
+    @SuppressLint("SetTextI18n")
     private fun updateUI() {
         val timestamp = System.currentTimeMillis()
         sensorDataTextView.text =
@@ -242,7 +243,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         🔀 ${sensorManager.gyroX} ${sensorManager.gyroY} ${sensorManager.gyroZ}
         🏎️ ${sensorManager.accelX} ${sensorManager.accelY} ${sensorManager.accelZ}
         👣 ${sensorManager.sessionSteps}
-        📡 ${scannedDevices}
+        📡 $scannedDevices
         🎙️ ${if (audioRecorder.isRecording) "Recording" else "Not Recording"}
         """.trimIndent()
 
@@ -317,6 +318,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         }
     }
 
+    @SuppressLint("HardwareIds")
     private fun getWatchId(context: Context): String {
         return android.provider.Settings.Secure.getString(
                 context.contentResolver,

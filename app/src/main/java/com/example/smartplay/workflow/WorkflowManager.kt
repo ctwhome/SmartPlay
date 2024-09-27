@@ -28,47 +28,9 @@ class WorkflowManager(
     private val handler = Handler(Looper.getMainLooper())
     private val scheduledRunnables = mutableListOf<Runnable>()
 
-    companion object {
-        const val PREF_VIBRATION = "checkBoxVibration"
-        const val PREF_SOUND = "checkBoxSound"
-    }
-
-    fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
-        Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
-        val gson = Gson()
-        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
-
-        return try {
-            workflowContent = workflowString
-            workflows = gson.fromJson(workflowString, workflowListType)
-            Log.d(TAG, "Parsed workflows: ${workflows.size}")
-
-            selectedWorkflow =
-                    workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
-            Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
-            Log.d(
-                    TAG,
-                    "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
-            )
-            Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
-            selectedWorkflow
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
-            null
-        }
-    }
-
-    fun scheduleCustomDialogs(workflow: Workflow) {
-        Log.d(TAG, "Scheduling custom dialogs for workflow: ${workflow.workflow_name}")
-        workflow.questions.forEachIndexed { index, question ->
-            Log.d(TAG, "Scheduling dialog for question ${index + 1}: ${question.question_id}")
-            scheduleDialog(question)
-        }
-    }
-
     private fun scheduleDialog(question: Question) {
-        val delayMillis = question.time_after_start_in_minutes * 1000L
-        // val delayMillis = question.time_after_start_in_minutes * 60 * 1000L   TODO: use this 60
+        val delayMillis = question.time_after_start * 1000L
+        // val delayMillis = question.time_after_start * 60 * 1000L   TODO: use this 60
         // to use minutes, after testing
         Log.d(
                 TAG,
@@ -86,8 +48,7 @@ class WorkflowManager(
         if (question.frequency > 1) {
             for (i in 1 until question.frequency) {
                 val repeatedDelayMillis =
-                        delayMillis +
-                                (question.time_between_repetitions_in_minutes * 60 * 1000L * i)
+                        delayMillis + (question.time_between_repetitions * 1000L * i)
                 val repeatedRunnable = Runnable {
                     Log.d(
                             TAG,
@@ -193,6 +154,39 @@ class WorkflowManager(
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }
 
+    fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
+        Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
+        val gson = Gson()
+        val workflowListType = object : TypeToken<List<Workflow>>() {}.type
+
+        return try {
+            workflowContent = workflowString
+            workflows = gson.fromJson(workflowString, workflowListType)
+            Log.d(TAG, "Parsed workflows: ${workflows.size}")
+
+            selectedWorkflow =
+                    workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
+            Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
+            Log.d(
+                    TAG,
+                    "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
+            )
+            Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
+            selectedWorkflow
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
+            null
+        }
+    }
+
+    fun scheduleCustomDialogs(workflow: Workflow) {
+        Log.d(TAG, "Scheduling custom dialogs for workflow: ${workflow.workflow_name}")
+        workflow.questions.forEachIndexed { index, question ->
+            Log.d(TAG, "Scheduling dialog for question ${index + 1}: ${question.question_id}")
+            scheduleDialog(question)
+        }
+    }
+
     fun cancelScheduledDialogs() {
         Log.d(TAG, "Cancelling all scheduled dialogs")
         scheduledRunnables.forEach { handler.removeCallbacks(it) }
@@ -210,6 +204,11 @@ class WorkflowManager(
             Log.e(TAG, "Cannot reschedule dialogs: selectedWorkflow is not initialized")
         }
     }
+
+    companion object {
+        const val PREF_VIBRATION = "checkBoxVibration"
+        const val PREF_SOUND = "checkBoxSound"
+    }
 }
 
 data class Workflow(val workflow_name: String, val questions: List<Question>)
@@ -218,7 +217,7 @@ data class Question(
         val question_id: Int,
         val question_title: String,
         val answers: List<String>,
-        val time_after_start_in_minutes: Int,
+        val time_after_start: Int,
         val frequency: Int,
-        val time_between_repetitions_in_minutes: Int
+        val time_between_repetitions: Int
 )

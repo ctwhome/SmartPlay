@@ -15,7 +15,7 @@
 
         // retrieve previous X minutes
         "sensor": "heart-rate-variablity", //gps,magn, acc,...
-        "retrieval_time_in_minutes": 10,
+        "retrieval_time": 10,
         "max_threashold": 120,
         "min_threashold": 50,
 
@@ -40,9 +40,9 @@
           "🤢",
           "🤷‍♀️"
         ],
-        "time_after_start_in_minutes": 10,
+        "time_after_start": 10,
         "frequency": 1,
-        "time_between_repetitions_in_minutes": 2
+        "time_between_repetitions": 2
       },
       {
         "question_id": 2,
@@ -51,9 +51,9 @@
           "🔋",
           "🪫"
         ],
-        "time_after_start_in_minutes": 2,
+        "time_after_start": 2,
         "frequency": 2,
-        "time_between_repetitions_in_minutes": 2
+        "time_between_repetitions": 2
       },
       {
         "question_id": 3,
@@ -62,9 +62,9 @@
           "😭",
           "🥳"
         ],
-        "time_after_start_in_minutes": 5,
+        "time_after_start": 5,
         "frequency": 2,
-        "time_between_repetitions_in_minutes": 2
+        "time_between_repetitions": 2
       }
     ]
   },
@@ -78,9 +78,9 @@
           "🔥 on fire",
           "🚀"
         ],
-        "time_after_start_in_minutes": 1,
+        "time_after_start": 1,
         "frequency": 1,
-        "time_between_repetitions_in_minutes": 1
+        "time_between_repetitions": 1
       },
       {
         "question_id": 2,
@@ -89,9 +89,9 @@
           "🥵",
           "🥶"
         ],
-        "time_after_start_in_minutes": 3,
+        "time_after_start": 3,
         "frequency": 2,
-        "time_between_repetitions_in_minutes": 5
+        "time_between_repetitions": 5
       }
     ]
   },

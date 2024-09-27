@@ -1,12 +1,10 @@
 package com.example.smartplay
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.BatteryManager
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -15,7 +13,6 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import com.example.smartplay.sensors.PermissionManager
 import com.example.smartplay.workflow.FileUtils
 
@@ -23,29 +20,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var permissionManager: PermissionManager
     private val PERMISSION_REQUEST_CODE = 123
-
-    private fun showBatteryLevel() {
-        val batteryLevel = getBatteryLevel()
-        findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
-    }
-
-    private fun getBatteryLevel(): String {
-        val batteryStatus: Intent? =
-                IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                    applicationContext.registerReceiver(null, ifilter)
-                }
-        val level: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-        val scale: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-
-        val batteryPct = level.toFloat() / scale.toFloat()
-        Log.d("Battery Level", "Battery Level: $batteryPct")
-        return "${(batteryPct * 100).toInt()}%"
-    }
-
-    override fun onResume() {
-        super.onResume()
-        showBatteryLevel()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +34,11 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             initializeSettings()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showBatteryLevel()
     }
 
     override fun onRequestPermissionsResult(
@@ -147,14 +126,7 @@ class SettingsActivity : AppCompatActivity() {
                         saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
 
                         // Get the workflow file content (either from cache or by reading the file)
-                        val workflowContent =
-                                FileUtils.getWorkflowFileFromSharedPreferences(
-                                        this@SettingsActivity
-                                )
-                                        ?: FileUtils.readFileFromAppSpecificDirectory(
-                                                this@SettingsActivity
-                                        )
-
+                        val workflowContent = FileUtils.readFileFromAppSpecificDirectory( this@SettingsActivity )
                         if (workflowContent != null) {
                             Log.d("SettingsActivity", "Workflow file content available")
                             // Save the full workflow content to SharedPreferences
@@ -205,10 +177,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun getWorkflowList(): List<String> {
-        val workflowFileContent =
-                FileUtils.getWorkflowFileFromSharedPreferences(this)
-                        ?: FileUtils.readFileFromAppSpecificDirectory(this)
-
+        /** Force reading the file always from the directory. */
+        val workflowFileContent = FileUtils.readFileFromAppSpecificDirectory(this)
         return workflowFileContent?.let { FileUtils.getWorkflowNamesFromContent(it) } ?: emptyList()
     }
 
@@ -218,5 +188,23 @@ class SettingsActivity : AppCompatActivity() {
             putString(keyName, inputValue)
             apply()
         }
+    }
+
+    private fun showBatteryLevel() {
+        val batteryLevel = getBatteryLevel()
+        findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
+    }
+
+    private fun getBatteryLevel(): String {
+        val batteryStatus: Intent? =
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+                applicationContext.registerReceiver(null, ifilter)
+            }
+        val level: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+
+        val batteryPct = level.toFloat() / scale.toFloat()
+        Log.d("Battery Level", "Battery Level: $batteryPct")
+        return "${(batteryPct * 100).toInt()}%"
     }
 }
