@@ -56,8 +56,4 @@ class PasswordActivity : AppCompatActivity() {
         finish()
     }
 
-    override fun onBackPressed() {
-        setResult(RESULT_CANCELED)
-        super.onBackPressed()
-    }
 }

@@ -360,19 +360,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         }
     }
 
-    override fun onBackPressed() {
-        if (isRecording) {
-            val builder = AlertDialog.Builder(this)
-            builder.setMessage("Recording in progress. Do you really want to leave?")
-                    .setCancelable(false)
-                    .setPositiveButton("Yes") { _, _ -> super.onBackPressed() }
-                    .setNegativeButton("No", null)
-            val alert = builder.create()
-            alert.show()
-        } else {
-            super.onBackPressed()
-        }
-    }
 
     override fun writeQuestionsToCSV(
             timestamp: Long,
