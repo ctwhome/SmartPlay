@@ -55,7 +55,8 @@
         <service
             android:name=".workflow.NotificationService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync|location"
+            android:enabled="true" />
 
         <!-- Updated NotificationActionReceiver declaration -->
         <receiver

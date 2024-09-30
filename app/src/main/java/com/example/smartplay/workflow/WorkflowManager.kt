@@ -15,6 +15,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.example.smartplay.MyApplication
 import com.example.smartplay.R
 import com.example.smartplay.RecordingActivity
@@ -256,11 +257,22 @@ class WorkflowManager(
                 "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
             )
             Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
+
+            // Start the foreground service
+            startForegroundService()
+
             selectedWorkflow
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
             null
         }
+    }
+
+    private fun startForegroundService() {
+        val context = contextRef.get() ?: return
+        val serviceIntent = Intent(context, NotificationService::class.java)
+        ContextCompat.startForegroundService(context, serviceIntent)
+        Log.d(TAG, "Started foreground service")
     }
 
     fun scheduleCustomDialogs(workflow: Workflow) {
