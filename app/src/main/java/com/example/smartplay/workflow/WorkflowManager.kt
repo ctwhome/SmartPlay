@@ -42,10 +42,11 @@ class WorkflowManager(
     private val handler = Handler(Looper.getMainLooper())
     private val scheduledRunnables = mutableListOf<Runnable>()
 
+    // Map to keep track of active dialogs by question_id
+    private val activeDialogs = mutableMapOf<Int, AlertDialog>()
+
     private fun scheduleDialog(question: Question) {
         val delayMillis = question.time_after_start * 1000L
-        // val delayMillis = question.time_after_start * 60 * 1000L   TODO: use this 60
-        // to use minutes, after testing
         Log.d(
             TAG,
             "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
@@ -87,6 +88,23 @@ class WorkflowManager(
             return
         }
 
+        // Check if there's an existing dialog for this question_id
+        val existingDialog = activeDialogs[question.question_id]
+        if (existingDialog != null) {
+            Log.d(TAG, "Dismissing existing dialog for question ${question.question_id}")
+
+            existingDialog.setOnDismissListener {
+                activeDialogs.remove(question.question_id)
+                // Proceed to show the new dialog after the old one is dismissed
+                showNewDialog(context, question)
+            }
+            existingDialog.dismiss()
+        } else {
+            showNewDialog(context, question)
+        }
+    }
+
+    private fun showNewDialog(context: Context, question: Question) {
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
 
         // Make sound and vibrate
@@ -126,8 +144,17 @@ class WorkflowManager(
         val dialog = builder.create()
         val dialogView = createCustomDialogView(context, question, dialog)
         dialog.setView(dialogView)
+
+        // Set OnDismissListener to remove the dialog from the map when dismissed
+        dialog.setOnDismissListener {
+            activeDialogs.remove(question.question_id)
+        }
+
         dialog.show()
         Log.d(TAG, "Custom alert dialog shown for question: ${question.question_id}")
+
+        // Add the dialog to the activeDialogs map
+        activeDialogs[question.question_id] = dialog
     }
 
     private fun createCustomDialogView(
@@ -149,6 +176,7 @@ class WorkflowManager(
                 setOnClickListener {
                     recordAnswer(question, answer)
                     dialog.dismiss()
+                    activeDialogs.remove(question.question_id)
                 }
             }
             answersLayout.addView(button)
@@ -206,7 +234,7 @@ class WorkflowManager(
 
             val actionPendingIntent = PendingIntent.getBroadcast(
                 context,
-                index,
+                question.question_id * 100 + index, // Unique request code
                 actionIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
@@ -331,6 +359,10 @@ class WorkflowManager(
         scheduledRunnables.forEach { handler.removeCallbacks(it) }
         scheduledRunnables.clear()
         Log.d(TAG, "All scheduled dialogs cancelled")
+
+        // Dismiss any active dialogs
+        activeDialogs.values.forEach { it.dismiss() }
+        activeDialogs.clear()
     }
 
     fun rescheduleDialogs() {
