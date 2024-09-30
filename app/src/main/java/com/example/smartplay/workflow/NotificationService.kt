@@ -35,7 +35,7 @@ class NotificationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand called")
+        Log.d(TAG, "onStartCommand called with intent: $intent")
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
 
         if (intent != null) {
@@ -64,9 +64,7 @@ class NotificationService : Service() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "SmartPlay Notifications",
-                NotificationManager.IMPORTANCE_HIGH
+                CHANNEL_ID, "SmartPlay Notifications", NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for SmartPlay questions"
                 setShowBadge(true)
@@ -81,26 +79,17 @@ class NotificationService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("SmartPlay is running")
-            .setContentText("Tap to open the app")
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
+        return NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("SmartPlay is running").setContentText("Tap to open the app")
+            .setPriority(NotificationCompat.PRIORITY_LOW).setContentIntent(pendingIntent)
+            .setOngoing(true).build()
     }
 
     private fun createNotification(
-        questionId: Int,
-        questionTitle: String,
-        answers: Array<String>
+        questionId: Int, questionTitle: String, answers: Array<String>
     ): Notification {
         Log.d(TAG, "Creating notification for question: $questionId, title: $questionTitle")
         val intent = Intent(this, SettingsActivity::class.java).apply {
@@ -109,27 +98,19 @@ class NotificationService : Service() {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val fullScreenIntent = createFullScreenIntent(questionId, questionTitle)
 
-        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("SmartPlay Question")
-            .setContentText(questionTitle)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setOngoing(false)
-            .setFullScreenIntent(fullScreenIntent, true)
-            .extend(
-                NotificationCompat.WearableExtender()
-                    .setHintShowBackgroundOnly(true)
-            )
+        val notificationBuilder =
+            NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("SmartPlay Question").setContentText(questionTitle)
+                .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
+                .setAutoCancel(true).setOngoing(false).setFullScreenIntent(fullScreenIntent, true)
+                .extend(
+                    NotificationCompat.WearableExtender().setHintShowBackgroundOnly(true)
+                )
 
         // Add actions for each answer
         answers.forEachIndexed { index, answer ->

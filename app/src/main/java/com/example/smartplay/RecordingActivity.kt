@@ -45,23 +45,24 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private var scannedDevices: Map<String, Int> = emptyMap()
 
     private val passwordActivityLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                when (result.resultCode) {
-                    RESULT_OK -> {
-                        stopRecording()
-                        finish() // Navigate back to the previous activity (settings)
-                    }
-                    RESULT_CANCELED -> {
-                        // User canceled or entered incorrect password, continue recording
-                        Log.d(
-                                "PasswordActivity",
-                                "Password entry canceled or incorrect, continuing recording without changes"
-                        )
-                        // The PasswordActivity will automatically finish itself, so we don't need
-                        // to do anything here
-                    }
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            when (result.resultCode) {
+                RESULT_OK -> {
+                    stopRecording()
+                    finish() // Navigate back to the previous activity (settings)
+                }
+
+                RESULT_CANCELED -> {
+                    // User canceled or entered incorrect password, continue recording
+                    Log.d(
+                        "PasswordActivity",
+                        "Password entry canceled or incorrect, continuing recording without changes"
+                    )
+                    // The PasswordActivity will automatically finish itself, so we don't need
+                    // to do anything here
                 }
             }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,7 +138,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         sensorManager.startListening()
         locationManager.startListening()
         bluetoothManager.startScanning(
-                sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
+            sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
         )
 
         //        Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
@@ -151,14 +152,12 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                 } else {
                     Log.e(TAG, "Failed to start audio recording")
                     // Attempt to start recording again
-                    Handler(Looper.getMainLooper())
-                            .postDelayed(
-                                    {
-                                        Log.d(TAG, "Attempting to start audio recording again")
-                                        audioRecorder.startRecording()
-                                    },
-                                    1000
-                            )
+                    Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                Log.d(TAG, "Attempting to start audio recording again")
+                                audioRecorder.startRecording()
+                            }, 1000
+                        )
                 }
             } else {
                 Log.e(TAG, "Audio recording permission not granted")
@@ -218,24 +217,21 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private fun startUpdatingUI() {
         val handler = Handler(Looper.getMainLooper())
-        handler.post(
-                object : Runnable {
-                    override fun run() {
-                        if (isRecording && SystemClock.elapsedRealtime() - lastUpdateTime > 1000) {
-                            updateUI()
-                            lastUpdateTime = SystemClock.elapsedRealtime()
-                        }
-                        handler.postDelayed(this, 1000)
-                    }
+        handler.post(object : Runnable {
+            override fun run() {
+                if (isRecording && SystemClock.elapsedRealtime() - lastUpdateTime > 1000) {
+                    updateUI()
+                    lastUpdateTime = SystemClock.elapsedRealtime()
                 }
-        )
+                handler.postDelayed(this, 1000)
+            }
+        })
     }
 
     @SuppressLint("SetTextI18n")
     private fun updateUI() {
         val timestamp = System.currentTimeMillis()
-        sensorDataTextView.text =
-                """
+        sensorDataTextView.text = """
         ⏱️ $timestamp
         ❤️ ${sensorManager.heartRate}
         🌍 ${locationManager.latitude} ${locationManager.longitude}
@@ -247,23 +243,22 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         🎙️ ${if (audioRecorder.isRecording) "Recording" else "Not Recording"}
         """.trimIndent()
 
-        val sensorDataMap =
-                mapOf(
-                        "timestamp" to timestamp,
-                        "latitude" to locationManager.latitude,
-                        "longitude" to locationManager.longitude,
-                        "heartRate" to sensorManager.heartRate,
-                        "accelX" to sensorManager.accelX,
-                        "accelY" to sensorManager.accelY,
-                        "accelZ" to sensorManager.accelZ,
-                        "gyroX" to sensorManager.gyroX,
-                        "gyroY" to sensorManager.gyroY,
-                        "gyroZ" to sensorManager.gyroZ,
-                        "magnetoX" to sensorManager.magnetoX,
-                        "magnetoY" to sensorManager.magnetoY,
-                        "magnetoZ" to sensorManager.magnetoZ,
-                        "steps" to sensorManager.sessionSteps
-                )
+        val sensorDataMap = mapOf(
+            "timestamp" to timestamp,
+            "latitude" to locationManager.latitude,
+            "longitude" to locationManager.longitude,
+            "heartRate" to sensorManager.heartRate,
+            "accelX" to sensorManager.accelX,
+            "accelY" to sensorManager.accelY,
+            "accelZ" to sensorManager.accelZ,
+            "gyroX" to sensorManager.gyroX,
+            "gyroY" to sensorManager.gyroY,
+            "gyroZ" to sensorManager.gyroZ,
+            "magnetoX" to sensorManager.magnetoX,
+            "magnetoY" to sensorManager.magnetoY,
+            "magnetoZ" to sensorManager.magnetoZ,
+            "steps" to sensorManager.sessionSteps
+        )
 
         dataRecorder.writeSensorData(sensorDataMap)
         dataRecorder.writeBluetoothData(timestamp, scannedDevices)
@@ -271,8 +266,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private fun updateSensorDataVisibility() {
         val displaySensorValues =
-                sharedPreferences.getString("checkBoxDisplaySensorValues", "false")?.toBoolean()
-                        ?: true
+            sharedPreferences.getString("checkBoxDisplaySensorValues", "false")?.toBoolean() ?: true
         sensorDataTextView.visibility = if (displaySensorValues) View.VISIBLE else View.GONE
     }
 
@@ -291,11 +285,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         if (selectedWorkflowName != null && workflowFileContent != null) {
             try {
-                val workflow =
-                        workflowManager.initializeWorkflow(
-                                workflowFileContent,
-                                selectedWorkflowName
-                        )
+                val workflow = workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
                 if (workflow != null) {
                     Log.d(TAG, "Workflow initialized successfully: ${workflow.workflow_name}")
                     Log.d(TAG, "Number of questions: ${workflow.questions.size}")
@@ -321,20 +311,19 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     @SuppressLint("HardwareIds")
     private fun getWatchId(context: Context): String {
         return android.provider.Settings.Secure.getString(
-                context.contentResolver,
-                android.provider.Settings.Secure.ANDROID_ID
+            context.contentResolver, android.provider.Settings.Secure.ANDROID_ID
         )
     }
 
     private fun checkAudioPermission(): Boolean {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                        PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             Log.d(TAG, "Requesting audio permission")
             ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.RECORD_AUDIO),
-                    AUDIO_PERMISSION_REQUEST_CODE
+                this, arrayOf(Manifest.permission.RECORD_AUDIO), AUDIO_PERMISSION_REQUEST_CODE
             )
             return false
         }
@@ -343,16 +332,12 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             AUDIO_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() &&
-                                grantResults[0] == PackageManager.PERMISSION_GRANTED
-                ) {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d(TAG, "Audio recording permission granted")
                     audioRecorder.startRecording()
                 } else {
@@ -364,11 +349,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
 
     override fun writeQuestionsToCSV(
-            timestamp: Long,
-            questionId: String,
-            questionTitle: String,
-            answer: String,
-            state: String
+        timestamp: Long, questionId: String, questionTitle: String, answer: String, state: String
     ) {
         dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer, state)
     }

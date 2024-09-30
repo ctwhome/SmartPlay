@@ -158,9 +158,7 @@ class WorkflowManager(
     }
 
     private fun createCustomDialogView(
-        context: Context,
-        question: Question,
-        dialog: AlertDialog
+        context: Context, question: Question, dialog: AlertDialog
     ): View {
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_custom_answers, null)
@@ -192,9 +190,7 @@ class WorkflowManager(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId,
-                "SmartPlay Notifications",
-                NotificationManager.IMPORTANCE_HIGH
+                channelId, "SmartPlay Notifications", NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for SmartPlay questions"
             }
@@ -215,13 +211,11 @@ class WorkflowManager(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notificationBuilder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("SmartPlay Question")
-            .setContentText(question.question_title)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+        val notificationBuilder =
+            NotificationCompat.Builder(context, channelId).setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("SmartPlay Question").setContentText(question.question_title)
+                .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(pendingIntent)
+                .setAutoCancel(true)
 
         // Add actions for each answer
         question.answers.forEachIndexed { index, answer ->
@@ -233,17 +227,13 @@ class WorkflowManager(
             }
 
             val actionPendingIntent = PendingIntent.getBroadcast(
-                context,
-                question.question_id * 100 + index, // Unique request code
-                actionIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                context, question.question_id * 100 + index, // Unique request code
+                actionIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
             notificationBuilder.addAction(
                 NotificationCompat.Action(
-                    0,
-                    answer,
-                    actionPendingIntent
+                    0, answer, actionPendingIntent
                 )
             )
         }
@@ -273,8 +263,7 @@ class WorkflowManager(
 
     private fun vibrate(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        val vibrationEffect =
-            VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+        val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
         vibrator.vibrate(vibrationEffect)
         Log.d(TAG, "Vibration executed")
     }
@@ -282,30 +271,20 @@ class WorkflowManager(
     private fun recordQuestionAsked(question: Question) {
         val timestamp = System.currentTimeMillis()
         Log.d(
-            TAG,
-            "Recording question asked: ${question.question_id} at timestamp: $timestamp"
+            TAG, "Recording question asked: ${question.question_id} at timestamp: $timestamp"
         )
         dataRecorder.writeQuestionData(
-            timestamp,
-            question.question_id.toString(),
-            question.question_title,
-            "ASKED",
-            "asked"
+            timestamp, question.question_id.toString(), question.question_title, "ASKED", "asked"
         )
     }
 
     private fun recordAnswer(question: Question, answer: String) {
         val timestamp = System.currentTimeMillis()
         Log.d(
-            TAG,
-            "Recording answer for question ${question.question_id} at timestamp: $timestamp"
+            TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp"
         )
         dataRecorder.writeQuestionData(
-            timestamp,
-            question.question_id.toString(),
-            question.question_title,
-            answer,
-            "answered"
+            timestamp, question.question_id.toString(), question.question_title, answer, "answered"
         )
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }
@@ -320,12 +299,10 @@ class WorkflowManager(
             workflows = gson.fromJson(workflowString, workflowListType)
             Log.d(TAG, "Parsed workflows: ${workflows.size}")
 
-            selectedWorkflow =
-                workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
+            selectedWorkflow = workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
             Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
             Log.d(
-                TAG,
-                "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
+                TAG, "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
             )
             Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
 
