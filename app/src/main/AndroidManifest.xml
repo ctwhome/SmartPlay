@@ -71,11 +71,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Add AlarmReceiver declaration -->
-        <receiver
-            android:name=".workflow.AlarmReceiver"
-            android:enabled="true"
-            android:exported="false" />
 
         <!-- Add NotificationReceiver declaration -->
         <receiver

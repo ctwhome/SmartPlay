@@ -141,7 +141,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
         )
 
-        //        Log.d(TAG, "checkAudioPermission() result: ${checkAudioPermission()}")
         // Record audio
         if (checkBoxAudioRecording?.toBoolean() == true) {
             Log.d(TAG, "Audio recording is enabled in preferences")
@@ -153,11 +152,11 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                     Log.e(TAG, "Failed to start audio recording")
                     // Attempt to start recording again
                     Handler(Looper.getMainLooper()).postDelayed(
-                            {
-                                Log.d(TAG, "Attempting to start audio recording again")
-                                audioRecorder.startRecording()
-                            }, 1000
-                        )
+                        {
+                            Log.d(TAG, "Attempting to start audio recording again")
+                            audioRecorder.startRecording()
+                        }, 1000
+                    )
                 }
             } else {
                 Log.e(TAG, "Audio recording permission not granted")
@@ -285,7 +284,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         if (selectedWorkflowName != null && workflowFileContent != null) {
             try {
-                val workflow = workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
+                val workflow =
+                    workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
                 if (workflow != null) {
                     Log.d(TAG, "Workflow initialized successfully: ${workflow.workflow_name}")
                     Log.d(TAG, "Number of questions: ${workflow.questions.size}")
@@ -317,8 +317,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private fun checkAudioPermission(): Boolean {
         if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
+                this, Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             Log.d(TAG, "Requesting audio permission")

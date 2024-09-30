@@ -36,7 +36,7 @@ class NotificationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand called with intent: $intent")
-        startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
+//        startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
 
         if (intent != null) {
             val questionId = intent.getIntExtra(EXTRA_QUESTION_ID, -1)
