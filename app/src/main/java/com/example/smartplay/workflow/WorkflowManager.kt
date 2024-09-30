@@ -67,22 +67,23 @@ class WorkflowManager(
     }
 
     private fun showCustomDialog(question: Question) {
-        val context =
-                contextRef.get()
-                        ?: run {
-                            Log.e(TAG, "Context is null, cannot show dialog")
-                            return
-                        }
+
+        val context = contextRef.get()
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot show dialog")
+            return
+        }
+
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
 
         // Make sound and vibrate
         val checkBoxVibration = sharedPreferences.getString(PREF_VIBRATION, "true")
-        Log.d(TAG, "Vibration enabled: $checkBoxVibration")
+//        Log.d(TAG, "Vibration enabled: $checkBoxVibration")
         if (checkBoxVibration?.toBoolean() == true) {
             vibrate(context)
         }
         val checkBoxSound = sharedPreferences.getString(PREF_SOUND, "true")
-        Log.d(TAG, "Sound enabled: $checkBoxSound")
+//        Log.d(TAG, "Sound enabled: $checkBoxSound")
         if (checkBoxSound?.toBoolean() == true) {
             playSound(context)
         }
