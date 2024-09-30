@@ -157,7 +157,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupCheckbox(checkboxId: Int, preferenceName: String) {
         val checkbox: CheckBox = findViewById(checkboxId)
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        checkbox.isChecked = sharedPref.getString(preferenceName, "true").toBoolean()
+        checkbox.isChecked = sharedPref.getString(preferenceName, "false").toBoolean()
         checkbox.setOnCheckedChangeListener { _, isChecked ->
             saveToSharedPreferences(preferenceName, isChecked.toString())
         }
