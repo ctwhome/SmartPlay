@@ -47,12 +47,10 @@ class WorkflowManager(
 
     // Show custom dialog if running in the foreground and notification if in background
     private fun showQuestion(question: Question, context: Context) {
-
         // check if the application is running in the foreground
         if (!isAppInForeground(context)) {
-            sendNotification(context, question)
+//            sendNotification(context, question)
 
-return
             // Schedule the notification
             val serviceIntent = Intent(contextRef.get(), NotificationService::class.java).apply {
                 putExtra(NotificationService.EXTRA_QUESTION_ID, question.question_id)
@@ -60,7 +58,7 @@ return
                 putExtra(NotificationService.EXTRA_ANSWERS, question.answers.toTypedArray())
             }
             ContextCompat.startForegroundService(contextRef.get()!!, serviceIntent)
-            return
+//            return
         }
 
         Log.d(TAG, "Showing question: ${question.question_id}")
