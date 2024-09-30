@@ -1,24 +1,32 @@
 package com.example.smartplay.workflow
 
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.example.smartplay.MyApplication
 import com.example.smartplay.R
+import com.example.smartplay.RecordingActivity
 import com.example.smartplay.data.DataRecorder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.ref.WeakReference
 
 class WorkflowManager(
-        context: Context,
-        private val dataRecorder: DataRecorder,
-        private val sharedPreferences: SharedPreferences
+    context: Context,
+    private val dataRecorder: DataRecorder,
+    private val sharedPreferences: SharedPreferences
 ) {
     private val TAG = "WorkflowManager"
     private lateinit var workflows: List<Workflow>
@@ -33,8 +41,8 @@ class WorkflowManager(
         // val delayMillis = question.time_after_start * 60 * 1000L   TODO: use this 60
         // to use minutes, after testing
         Log.d(
-                TAG,
-                "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
+            TAG,
+            "Scheduling dialog for question ${question.question_id} with delay: $delayMillis ms"
         )
         val runnable = Runnable {
             Log.d(TAG, "Executing runnable for question ${question.question_id}")
@@ -48,26 +56,25 @@ class WorkflowManager(
         if (question.frequency > 1) {
             for (i in 1 until question.frequency) {
                 val repeatedDelayMillis =
-                        delayMillis + (question.time_between_repetitions * 1000L * i)
+                    delayMillis + (question.time_between_repetitions * 1000L * i)
                 val repeatedRunnable = Runnable {
                     Log.d(
-                            TAG,
-                            "Executing repeated runnable for question ${question.question_id}, repetition ${i + 1}"
+                        TAG,
+                        "Executing repeated runnable for question ${question.question_id}, repetition ${i + 1}"
                     )
                     showCustomDialog(question)
                 }
                 scheduledRunnables.add(repeatedRunnable)
                 handler.postDelayed(repeatedRunnable, repeatedDelayMillis)
                 Log.d(
-                        TAG,
-                        "Repeated dialog scheduled for question ${question.question_id}, repetition ${i + 1} with delay: $repeatedDelayMillis ms"
+                    TAG,
+                    "Repeated dialog scheduled for question ${question.question_id}, repetition ${i + 1} with delay: $repeatedDelayMillis ms"
                 )
             }
         }
     }
 
     private fun showCustomDialog(question: Question) {
-
         val context = contextRef.get()
         if (context == null) {
             Log.e(TAG, "Context is null, cannot show dialog")
@@ -78,12 +85,10 @@ class WorkflowManager(
 
         // Make sound and vibrate
         val checkBoxVibration = sharedPreferences.getString(PREF_VIBRATION, "true")
-//        Log.d(TAG, "Vibration enabled: $checkBoxVibration")
         if (checkBoxVibration?.toBoolean() == true) {
             vibrate(context)
         }
         val checkBoxSound = sharedPreferences.getString(PREF_SOUND, "true")
-//        Log.d(TAG, "Sound enabled: $checkBoxSound")
         if (checkBoxSound?.toBoolean() == true) {
             playSound(context)
         }
@@ -91,6 +96,24 @@ class WorkflowManager(
         // Record that the question is being asked
         recordQuestionAsked(question)
 
+        if (isAppInForeground(context)) {
+            showAlertDialog(context, question)
+        } else {
+            sendNotification(context, question)
+        }
+    }
+
+    private fun isAppInForeground(context: Context): Boolean {
+        val app = context.applicationContext
+        return if (app is MyApplication) {
+            app.isAppInForeground
+        } else {
+            // Fallback if MyApplication is not set up
+            true
+        }
+    }
+
+    private fun showAlertDialog(context: Context, question: Question) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle(question.question_title)
 
@@ -101,7 +124,67 @@ class WorkflowManager(
             dialog.dismiss()
         }
         builder.show()
-        Log.d(TAG, "Custom dialog shown for question: ${question.question_id}")
+        Log.d(TAG, "Alert dialog shown for question: ${question.question_id}")
+    }
+
+    private fun sendNotification(context: Context, question: Question) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "SmartPlayChannel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "SmartPlay Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for SmartPlay questions"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, RecordingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("EXTRA_QUESTION_ID", question.question_id)
+            putExtra("EXTRA_QUESTION_TITLE", question.question_title)
+            putExtra("EXTRA_ANSWERS", question.answers.toTypedArray())
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            question.question_id,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notificationBuilder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("SmartPlay Question")
+            .setContentText(question.question_title)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        // Add actions for each answer
+        question.answers.forEachIndexed { index, answer ->
+            val actionIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = "com.example.smartplay.ANSWER_$index"
+                putExtra("EXTRA_QUESTION_ID", question.question_id)
+                putExtra("EXTRA_QUESTION_TITLE", question.question_title)
+                putExtra("ANSWER", answer)
+            }
+
+            val actionPendingIntent = PendingIntent.getBroadcast(
+                context,
+                index,
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            notificationBuilder.addAction(NotificationCompat.Action(0, answer, actionPendingIntent))
+        }
+
+        notificationManager.notify(question.question_id, notificationBuilder.build())
+        Log.d(TAG, "Notification sent for question: ${question.question_id}")
     }
 
     private fun playSound(context: Context) {
@@ -134,11 +217,11 @@ class WorkflowManager(
         val timestamp = System.currentTimeMillis()
         Log.d(TAG, "Recording question asked: ${question.question_id} at timestamp: $timestamp")
         dataRecorder.writeQuestionData(
-                timestamp,
-                question.question_id.toString(),
-                question.question_title,
-                "ASKED",
-                "asked"
+            timestamp,
+            question.question_id.toString(),
+            question.question_title,
+            "ASKED",
+            "asked"
         )
     }
 
@@ -146,11 +229,11 @@ class WorkflowManager(
         val timestamp = System.currentTimeMillis()
         Log.d(TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp")
         dataRecorder.writeQuestionData(
-                timestamp,
-                question.question_id.toString(),
-                question.question_title,
-                answer,
-                "answered"
+            timestamp,
+            question.question_id.toString(),
+            question.question_title,
+            answer,
+            "answered"
         )
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }
@@ -166,11 +249,11 @@ class WorkflowManager(
             Log.d(TAG, "Parsed workflows: ${workflows.size}")
 
             selectedWorkflow =
-                    workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
+                workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
             Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
             Log.d(
-                    TAG,
-                    "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
+                TAG,
+                "Number of questions in selected workflow: ${selectedWorkflow.questions.size}"
             )
             Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
             selectedWorkflow
@@ -215,10 +298,10 @@ class WorkflowManager(
 data class Workflow(val workflow_name: String, val questions: List<Question>)
 
 data class Question(
-        val question_id: Int,
-        val question_title: String,
-        val answers: List<String>,
-        val time_after_start: Int,
-        val frequency: Int,
-        val time_between_repetitions: Int
+    val question_id: Int,
+    val question_title: String,
+    val answers: List<String>,
+    val time_after_start: Int,
+    val frequency: Int,
+    val time_between_repetitions: Int
 )
