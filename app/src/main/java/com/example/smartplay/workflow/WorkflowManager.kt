@@ -51,6 +51,10 @@ class WorkflowManager(
         if (!isAppInForeground(context)) {
 //            sendNotification(context, question)
 
+        }
+
+
+        //CONTINUE HEREEEEEEEEEEEEEEEEEEEEEEEEee
             // Schedule the notification
             val serviceIntent = Intent(contextRef.get(), NotificationService::class.java).apply {
                 putExtra(NotificationService.EXTRA_QUESTION_ID, question.question_id)
@@ -59,7 +63,7 @@ class WorkflowManager(
             }
             ContextCompat.startForegroundService(contextRef.get()!!, serviceIntent)
 //            return
-        }
+
 
         Log.d(TAG, "Showing question: ${question.question_id}")
         showCustomDialog(question)
