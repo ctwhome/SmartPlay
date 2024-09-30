@@ -14,12 +14,17 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.Button
+import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.smartplay.MyApplication
 import com.example.smartplay.R
 import com.example.smartplay.RecordingActivity
 import com.example.smartplay.data.DataRecorder
+import com.example.smartplay.ui.FlowLayout
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.ref.WeakReference
@@ -116,20 +121,45 @@ class WorkflowManager(
 
     private fun showAlertDialog(context: Context, question: Question) {
         val builder = AlertDialog.Builder(context)
-        builder.setTitle(question.question_title)
+        builder.setCancelable(false) // Prevent dismissing by tapping outside
 
-        val options = question.answers.toTypedArray()
-        builder.setItems(options) { dialog, which ->
-            val selectedOption = options[which]
-            recordAnswer(question, selectedOption)
-            dialog.dismiss()
+        val dialog = builder.create()
+        val dialogView = createCustomDialogView(context, question, dialog)
+        dialog.setView(dialogView)
+        dialog.show()
+        Log.d(TAG, "Custom alert dialog shown for question: ${question.question_id}")
+    }
+
+    private fun createCustomDialogView(
+        context: Context,
+        question: Question,
+        dialog: AlertDialog
+    ): View {
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_custom_answers, null)
+
+        val questionTitle = view.findViewById<TextView>(R.id.questionTitle)
+        questionTitle.text = question.question_title
+
+        val answersLayout = view.findViewById<FlowLayout>(R.id.answersLayout)
+
+        question.answers.forEach { answer ->
+            val button = Button(context).apply {
+                text = answer
+                setOnClickListener {
+                    recordAnswer(question, answer)
+                    dialog.dismiss()
+                }
+            }
+            answersLayout.addView(button)
         }
-        builder.show()
-        Log.d(TAG, "Alert dialog shown for question: ${question.question_id}")
+
+        return view
     }
 
     private fun sendNotification(context: Context, question: Question) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "SmartPlayChannel"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -181,7 +211,13 @@ class WorkflowManager(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            notificationBuilder.addAction(NotificationCompat.Action(0, answer, actionPendingIntent))
+            notificationBuilder.addAction(
+                NotificationCompat.Action(
+                    0,
+                    answer,
+                    actionPendingIntent
+                )
+            )
         }
 
         notificationManager.notify(question.question_id, notificationBuilder.build())
@@ -209,14 +245,18 @@ class WorkflowManager(
 
     private fun vibrate(context: Context) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        val vibrationEffect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+        val vibrationEffect =
+            VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
         vibrator.vibrate(vibrationEffect)
         Log.d(TAG, "Vibration executed")
     }
 
     private fun recordQuestionAsked(question: Question) {
         val timestamp = System.currentTimeMillis()
-        Log.d(TAG, "Recording question asked: ${question.question_id} at timestamp: $timestamp")
+        Log.d(
+            TAG,
+            "Recording question asked: ${question.question_id} at timestamp: $timestamp"
+        )
         dataRecorder.writeQuestionData(
             timestamp,
             question.question_id.toString(),
@@ -228,7 +268,10 @@ class WorkflowManager(
 
     private fun recordAnswer(question: Question, answer: String) {
         val timestamp = System.currentTimeMillis()
-        Log.d(TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp")
+        Log.d(
+            TAG,
+            "Recording answer for question ${question.question_id} at timestamp: $timestamp"
+        )
         dataRecorder.writeQuestionData(
             timestamp,
             question.question_id.toString(),
