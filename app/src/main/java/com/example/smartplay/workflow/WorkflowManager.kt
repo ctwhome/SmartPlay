@@ -45,7 +45,34 @@ class WorkflowManager(
     // Map to keep track of active dialogs by question_id
     private val activeDialogs = mutableMapOf<Int, AlertDialog>()
 
+    // Show custom dialog if running in the foreground and notification if in background
+    private fun showQuestion(question: Question, context: Context) {
+
+        // check if the application is running in the foreground
+        if (!isAppInForeground(context)) {
+            sendNotification(context, question)
+
+return
+            // Schedule the notification
+            val serviceIntent = Intent(contextRef.get(), NotificationService::class.java).apply {
+                putExtra(NotificationService.EXTRA_QUESTION_ID, question.question_id)
+                putExtra(NotificationService.EXTRA_QUESTION_TITLE, question.question_title)
+                putExtra(NotificationService.EXTRA_ANSWERS, question.answers.toTypedArray())
+            }
+            ContextCompat.startForegroundService(contextRef.get()!!, serviceIntent)
+            return
+        }
+
+        Log.d(TAG, "Showing question: ${question.question_id}")
+        showCustomDialog(question)
+
+
+
+    }
+
     private fun scheduleDialog(question: Question) {
+
+
         val delayMillis = question.time_after_start * 1000L
         Log.d(
             TAG,
@@ -53,7 +80,8 @@ class WorkflowManager(
         )
         val runnable = Runnable {
             Log.d(TAG, "Executing runnable for question ${question.question_id}")
-            showCustomDialog(question)
+//            showCustomDialog(question)
+            showQuestion(question, contextRef.get()!!)
         }
         scheduledRunnables.add(runnable)
         handler.postDelayed(runnable, delayMillis)
@@ -69,7 +97,8 @@ class WorkflowManager(
                         TAG,
                         "Executing repeated runnable for question ${question.question_id}, repetition ${i + 1}"
                     )
-                    showCustomDialog(question)
+//                    showCustomDialog(question)
+                    showQuestion(question, contextRef.get()!!)
                 }
                 scheduledRunnables.add(repeatedRunnable)
                 handler.postDelayed(repeatedRunnable, repeatedDelayMillis)
