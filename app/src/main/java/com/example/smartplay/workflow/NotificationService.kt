@@ -95,6 +95,8 @@ class NotificationService : Service() {
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
+        val fullScreenIntent = createFullScreenIntent(questionId, questionTitle)
+
         val notificationBuilder =
                 NotificationCompat.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_notification)
@@ -104,6 +106,7 @@ class NotificationService : Service() {
                         .setContentIntent(pendingIntent)
                         .setAutoCancel(true)
                         .setOngoing(true)
+                        .setFullScreenIntent(fullScreenIntent, true)
                         .extend(
                                 NotificationCompat.WearableExtender()
                                         .setHintShowBackgroundOnly(true)
@@ -129,6 +132,22 @@ class NotificationService : Service() {
         }
 
         return notificationBuilder.build()
+    }
+
+    private fun createFullScreenIntent(questionId: Int, questionTitle: String): PendingIntent {
+        val fullScreenIntent =
+                Intent(this, SettingsActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra(EXTRA_QUESTION_ID, questionId)
+                    putExtra(EXTRA_QUESTION_TITLE, questionTitle)
+                }
+
+        return PendingIntent.getActivity(
+                this,
+                0,
+                fullScreenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     override fun onDestroy() {

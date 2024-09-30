@@ -1,6 +1,6 @@
 [
   {
-    "workflow_name": "Ctw",
+    "workflow_name": "Ctw3",
     "questions": [
       {
         "question_id": 1,
@@ -10,9 +10,9 @@
           "🚀",
           "🎹"
         ],
-        "time_after_start": 1,
-        "frequency": 3,
-        "time_between_repetitions": 5
+        "time_after_start": 3,
+        "frequency": 5,
+        "time_between_repetitions": 3
       }
     ]
   }

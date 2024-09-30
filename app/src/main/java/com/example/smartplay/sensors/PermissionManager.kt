@@ -2,8 +2,12 @@ package com.example.smartplay.sensors
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -56,7 +60,7 @@ class PermissionManager(private val activity: Activity) {
     fun allPermissionsGranted(): Boolean {
         return requiredPermissions.all {
             ContextCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED
-        }
+        } && canScheduleExactAlarms()
     }
 
     fun requestPermissions() {
@@ -75,6 +79,10 @@ class PermissionManager(private val activity: Activity) {
                     PERMISSION_REQUEST_CODE
             )
         }
+
+        if (!canScheduleExactAlarms()) {
+            requestScheduleExactAlarmPermission()
+        }
     }
 
     fun onRequestPermissionsResult(
@@ -88,7 +96,7 @@ class PermissionManager(private val activity: Activity) {
                         grantResults[index] != PackageManager.PERMISSION_GRANTED
                     }
 
-            if (deniedPermissions.isEmpty()) {
+            if (deniedPermissions.isEmpty() && canScheduleExactAlarms()) {
                 Log.i(TAG, "All permissions granted")
                 return true
             } else {
@@ -141,5 +149,30 @@ class PermissionManager(private val activity: Activity) {
 
         val message = explanations.joinToString("\n\n")
         Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+
+        if (!canScheduleExactAlarms()) {
+            Toast.makeText(
+                            activity,
+                            "Exact alarm scheduling permission is required for timely notifications. Please grant this permission in the app settings.",
+                            Toast.LENGTH_LONG
+                    )
+                    .show()
+        }
+    }
+
+    fun canScheduleExactAlarms(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
+
+    fun requestScheduleExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            activity.startActivity(intent)
+        }
     }
 }
