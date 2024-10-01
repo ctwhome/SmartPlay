@@ -1,4 +1,4 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.workflow.notifications
 
 import android.app.Notification
 import android.app.NotificationChannel

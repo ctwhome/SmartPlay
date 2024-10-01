@@ -1,4 +1,4 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.workflow.notifications
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.smartplay.R
 import com.example.smartplay.RecordingActivity
+import com.example.smartplay.workflow.Question
 
 class NotificationManager(private val context: Context) {
     private val TAG = "NotificationManager"

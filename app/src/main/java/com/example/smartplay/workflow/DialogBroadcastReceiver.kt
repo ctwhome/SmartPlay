@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.smartplay.MyApplication
+import com.example.smartplay.workflow.notifications.NotificationHelper
 
 class DialogBroadcastReceiver : BroadcastReceiver() {
     private val TAG = "DialogBroadcastReceiver"
