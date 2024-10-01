@@ -58,6 +58,15 @@
             android:foregroundServiceType="dataSync|location"
             android:enabled="true" />
 
+        <!-- Added WorkflowService declaration -->
+        <service
+            android:name=".workflow.WorkflowService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|location"
+            android:enabled="true" />
+
+        <receiver android:name=".workflow.AlarmReceiver" />
+
         <!-- Updated NotificationActionReceiver declaration -->
         <receiver
             android:name=".workflow.NotificationActionReceiver"

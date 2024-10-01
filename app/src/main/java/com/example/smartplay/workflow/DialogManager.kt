@@ -14,6 +14,17 @@ class DialogManager(private val context: Context, private val recordAnswer: (Que
     private val TAG = "DialogManager"
     private val activeDialogs = mutableMapOf<Int, AlertDialog>()
 
+    companion object {
+        @Volatile
+        private var instance: DialogManager? = null
+
+        fun getInstance(context: Context, recordAnswer: (Question, String) -> Unit): DialogManager {
+            return instance ?: synchronized(this) {
+                instance ?: DialogManager(context, recordAnswer).also { instance = it }
+            }
+        }
+    }
+
     fun showCustomDialog(question: Question) {
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
 

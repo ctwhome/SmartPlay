@@ -2,6 +2,7 @@ package com.example.smartplay
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -15,6 +16,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -24,10 +26,11 @@ import com.example.smartplay.data.DataRecorder
 import com.example.smartplay.sensors.CustomLocationManager
 import com.example.smartplay.sensors.CustomSensorManager
 import com.example.smartplay.data.AudioRecorder
-import com.example.smartplay.workflow.QuestionRecorder
 import com.example.smartplay.workflow.WorkflowManager
+import com.example.smartplay.workflow.WorkflowService
+import com.example.smartplay.workflow.Workflow
 
-class RecordingActivity : AppCompatActivity(), QuestionRecorder {
+class RecordingActivity : AppCompatActivity() {
 
     private lateinit var sensorManager: CustomSensorManager
     private lateinit var locationManager: CustomLocationManager
@@ -43,29 +46,25 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private var isRecording = false
     private var lastUpdateTime: Long = 0
     private var scannedDevices: Map<String, Int> = emptyMap()
+    private var selectedWorkflow: Workflow? = null
 
     private val passwordActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             when (result.resultCode) {
                 RESULT_OK -> {
                     stopRecording()
-                    finish() // Navigate back to the previous activity (settings)
+                    navigateToSettings()
                 }
 
                 RESULT_CANCELED -> {
-                    // User canceled or entered incorrect password, continue recording
-                    Log.d(
-                        "PasswordActivity",
-                        "Password entry canceled or incorrect, continuing recording without changes"
-                    )
-                    // The PasswordActivity will automatically finish itself, so we don't need
-                    // to do anything here
+                    Log.d(TAG, "Password entry canceled or incorrect, continuing recording without changes")
                 }
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate() called")
         setContentView(R.layout.recording_activity)
 
         supportActionBar?.hide() // Hide the action bar
@@ -107,24 +106,27 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun initializeManagers() {
+        Log.d(TAG, "Initializing managers")
         sensorManager = CustomSensorManager(this)
         locationManager = CustomLocationManager(this)
         bluetoothManager = CustomBluetoothManager(this)
         dataRecorder = DataRecorder(this)
-        workflowManager = WorkflowManager(this, dataRecorder, sharedPreferences)
+        workflowManager = WorkflowManager(this, dataRecorder)
         audioRecorder = AudioRecorder(this)
 
         // Set up Bluetooth scan result listener
         bluetoothManager.setOnScanResultListener { devices -> scannedDevices = devices }
+        Log.d(TAG, "Managers initialized")
     }
 
     private fun showPasswordActivity() {
+        Log.d(TAG, "Showing password activity")
         val intent = Intent(this, PasswordActivity::class.java)
         passwordActivityLauncher.launch(intent)
     }
 
     private fun startRecording() {
-        //        Log.d(TAG, "startRecording() called")
+        Log.d(TAG, "startRecording() called")
         val childId = sharedPreferences.getString("idChild", "000")
         val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         val timestamp = System.currentTimeMillis()
@@ -178,6 +180,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         // Update button visibility
         updateButtonVisibility()
+
+        Log.d(TAG, "Recording started successfully")
     }
 
     private fun stopRecording() {
@@ -187,10 +191,9 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         locationManager.stopListening()
         bluetoothManager.stopScanning()
         dataRecorder.closeFiles()
-        workflowManager.cancelScheduledDialogs()
 
-        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         // Stop audio recording
+        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
         if (checkBoxAudioRecording?.toBoolean() == true) {
             Log.d(TAG, "Stopping audio recording")
             val audioFilePath = audioRecorder.stopRecording()
@@ -203,8 +206,35 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             Log.d(TAG, "Audio recording was not active")
         }
 
+        // Cancel scheduled alarms and stop the WorkflowService
+        if (selectedWorkflow != null) {
+            Log.d(TAG, "Cancelling alarms for workflow: ${selectedWorkflow!!.workflow_name}")
+            WorkflowService.cancelAlarms(this, selectedWorkflow!!)
+        } else {
+            Log.e(TAG, "Cannot cancel alarms: selectedWorkflow is null")
+        }
+        val serviceIntent = Intent(this, WorkflowService::class.java)
+        stopService(serviceIntent)
+        Log.d(TAG, "WorkflowService stopped")
+
+        // Cancel any displayed notifications
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancelAll()
+        Log.d(TAG, "All notifications cancelled")
+
         // Update button visibility
         updateButtonVisibility()
+
+        // Notify user
+        Toast.makeText(this, "Recording stopped and scheduler canceled.", Toast.LENGTH_SHORT).show()
+        Log.d(TAG, "Recording stopped successfully")
+    }
+
+    private fun navigateToSettings() {
+        Log.d(TAG, "Navigating to SettingsActivity")
+        val intent = Intent(this, SettingsActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun updateButtonVisibility() {
@@ -270,11 +300,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     }
 
     private fun initWorkflowQuestions() {
-        //        Log.d(TAG, "initWorkflowQuestions() called")
-
-        // Log all keys in shared preferences
-        Log.d(TAG, "All keys in shared preferences:")
-        sharedPreferences.all.forEach { (key, value) -> Log.d(TAG, "KEY $key: $value") }
+        Log.d(TAG, "initWorkflowQuestions() called")
 
         val selectedWorkflowName = sharedPreferences.getString("selectedWorkflow", null)
         val workflowFileContent = sharedPreferences.getString("workflowFile", null)
@@ -284,13 +310,14 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         if (selectedWorkflowName != null && workflowFileContent != null) {
             try {
-                val workflow =
-                    workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
-                if (workflow != null) {
-                    Log.d(TAG, "Workflow initialized successfully: ${workflow.workflow_name}")
-                    Log.d(TAG, "Number of questions: ${workflow.questions.size}")
-                    workflowManager.scheduleCustomDialogs(workflow)
-                    Log.d(TAG, "Custom dialogs scheduled")
+                Log.d(TAG, "Initializing workflow with WorkflowManager")
+                selectedWorkflow = workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
+                if (selectedWorkflow != null) {
+                    Log.d(TAG, "Workflow initialized successfully: ${selectedWorkflow!!.workflow_name}")
+                    Log.d(TAG, "Number of questions: ${selectedWorkflow!!.questions.size}")
+
+                    // Start the WorkflowService
+                    startWorkflowService()
                 } else {
                     Log.e(TAG, "Workflow initialization failed: Null workflow returned")
                 }
@@ -305,6 +332,20 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             if (workflowFileContent == null) {
                 Log.e(TAG, "Workflow file content is null")
             }
+        }
+    }
+
+    private fun startWorkflowService() {
+        Log.d(TAG, "startWorkflowService() called")
+        if (selectedWorkflow != null) {
+            val serviceIntent = Intent(this, WorkflowService::class.java).apply {
+                putExtra("workflow", selectedWorkflow)
+            }
+            Log.d(TAG, "Starting WorkflowService as a foreground service")
+            ContextCompat.startForegroundService(this, serviceIntent)
+            Log.d(TAG, "WorkflowService started")
+        } else {
+            Log.e(TAG, "Cannot start WorkflowService: selectedWorkflow is null")
         }
     }
 
@@ -346,34 +387,22 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         }
     }
 
-
-    override fun writeQuestionsToCSV(
-        timestamp: Long, questionId: String, questionTitle: String, answer: String, state: String
-    ) {
-        dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer, state)
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy() called")
-        workflowManager.cancelScheduledDialogs()
+        if (isRecording) {
+            stopRecording()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         Log.d(TAG, "onPause() called")
-        workflowManager.cancelScheduledDialogs()
     }
 
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume() called")
-        if (isRecording) {
-            Log.d(TAG, "Recording is active, rescheduling dialogs")
-            workflowManager.rescheduleDialogs()
-        } else {
-            Log.d(TAG, "Recording is not active, dialogs not rescheduled")
-        }
     }
 
     companion object {
