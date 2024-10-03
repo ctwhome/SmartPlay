@@ -14,20 +14,15 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val questionTitle = intent?.getStringExtra("EXTRA_QUESTION_TITLE") ?: ""
         val answer = intent?.getStringExtra("ANSWER") ?: ""
 
-        if (questionId != -1 && context != null) {
+        if (questionId != -1) {
             Log.d(TAG, "Received answer for question $questionId: $answer")
 
-            // Record the answer
-            val appContext = context.applicationContext
-            if (appContext is RecordingActivity) {
-                val timestamp = System.currentTimeMillis()
-                appContext.recordQuestionAnswered(timestamp, questionId.toString(), questionTitle, answer)
-                Log.d(TAG, "Answer recorded for question $questionId")
-            } else {
-                Log.e(TAG, "Application context is not RecordingActivity")
-            }
+            // Record the answer using the static method
+            val timestamp = System.currentTimeMillis()
+            RecordingActivity.recordQuestionAnsweredStatic(timestamp, questionId.toString(), questionTitle, answer)
+            Log.d(TAG, "Answer recorded for question $questionId")
         } else {
-            Log.e(TAG, "Invalid question ID or context is null")
+            Log.e(TAG, "Invalid question ID")
         }
     }
 }
