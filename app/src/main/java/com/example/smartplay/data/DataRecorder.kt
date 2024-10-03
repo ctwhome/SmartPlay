@@ -9,9 +9,10 @@ import java.io.IOException
 
 class DataRecorder(private val context: Context) {
     private val TAG = "DataRecorder"
-    private lateinit var sensorCsvWriter: FileWriter
-    private lateinit var btCsvWriter: FileWriter
-    private lateinit var questionCsvWriter: FileWriter
+    private var sensorCsvWriter: FileWriter? = null
+    private var btCsvWriter: FileWriter? = null
+    private var questionCsvWriter: FileWriter? = null
+    private var isInitialized = false
 
     fun initializeFiles(childId: String, watchId: String, timestamp: Long) {
         val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -19,6 +20,7 @@ class DataRecorder(private val context: Context) {
         initializeSensorFile(dir, childId, watchId, timestamp)
         initializeBluetoothFile(dir, childId, watchId, timestamp)
         initializeQuestionFile(dir, childId, watchId, timestamp)
+        isInitialized = true
     }
 
     private fun initializeSensorFile(
@@ -48,7 +50,7 @@ class DataRecorder(private val context: Context) {
         try {
             btCsvWriter = FileWriter(btFile, true)
             if (btFile.length() == 0L) {
-                btCsvWriter.append("timestamp,devices\n").flush()
+                btCsvWriter?.append("timestamp,devices\n")?.flush()
             }
         } catch (e: IOException) {
             Log.e(TAG, "Error creating Bluetooth CSV file: ${e.message}")
@@ -65,7 +67,7 @@ class DataRecorder(private val context: Context) {
         try {
             questionCsvWriter = FileWriter(questionFile, true)
             if (questionFile.length() == 0L) {
-                questionCsvWriter.append("timestamp,questionID,questionText,answer,state\n").flush()
+                questionCsvWriter?.append("timestamp,questionID,questionText,answer,state\n")?.flush()
             }
         } catch (e: IOException) {
             Log.e(TAG, "Error creating question CSV file: ${e.message}")
@@ -92,10 +94,14 @@ class DataRecorder(private val context: Context) {
         if (header.last() == ',') header.setLength(header.length - 1)
         header.append("\n")
 
-        sensorCsvWriter.append(header.toString()).flush()
+        sensorCsvWriter?.append(header.toString())?.flush()
     }
 
     fun writeSensorData(sensorData: Map<String, Any>) {
+        if (!isInitialized) {
+            Log.e(TAG, "DataRecorder not initialized. Call initializeFiles first.")
+            return
+        }
         val sharedPref = context.getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val data = StringBuilder("${sensorData["timestamp"]},")
 
@@ -122,19 +128,23 @@ class DataRecorder(private val context: Context) {
         data.append("\n")
 
         try {
-            sensorCsvWriter.append(data.toString()).flush()
+            sensorCsvWriter?.append(data.toString())?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "Error writing sensor data to CSV: ${e.message}")
         }
     }
 
     fun writeBluetoothData(timestamp: Long, devices: Map<String, Int>) {
+        if (!isInitialized) {
+            Log.e(TAG, "DataRecorder not initialized. Call initializeFiles first.")
+            return
+        }
         val data = StringBuilder("$timestamp")
         devices.forEach { (device, rssi) -> data.append(",$device-$rssi") }
         data.append("\n")
 
         try {
-            btCsvWriter.append(data.toString()).flush()
+            btCsvWriter?.append(data.toString())?.flush()
         } catch (e: IOException) {
             Log.e(TAG, "Error writing Bluetooth data to CSV: ${e.message}")
         }
@@ -147,10 +157,12 @@ class DataRecorder(private val context: Context) {
             answer: String,
             state: String
     ) {
+        if (!isInitialized) {
+            Log.e(TAG, "DataRecorder not initialized. Call initializeFiles first.")
+            return
+        }
         try {
-            questionCsvWriter
-                    .append("$timestamp,$questionID,$questionText,$answer,$state\n")
-                    .flush()
+            questionCsvWriter?.append("$timestamp,$questionID,$questionText,$answer,$state\n")?.flush()
             Log.d(
                     TAG,
                     "Question data written to CSV: Timestamp=$timestamp, QuestionID=$questionID, Answer=$answer, State=$state"
@@ -162,9 +174,9 @@ class DataRecorder(private val context: Context) {
 
     fun closeFiles() {
         try {
-            sensorCsvWriter.close()
-            btCsvWriter.close()
-            questionCsvWriter.close()
+            sensorCsvWriter?.close()
+            btCsvWriter?.close()
+            questionCsvWriter?.close()
         } catch (e: IOException) {
             Log.e(TAG, "Error closing CSV files: ${e.message}")
         }

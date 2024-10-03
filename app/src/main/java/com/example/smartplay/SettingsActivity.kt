@@ -117,25 +117,27 @@ class SettingsActivity : AppCompatActivity() {
         spinnerWorkflow.onItemSelectedListener =
                 object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(
-                            parent: AdapterView<*>,
-                            view: View,
+                            parent: AdapterView<*>?,
+                            view: View?,
                             position: Int,
                             id: Long
                     ) {
-                        val selectedWorkflowName = parent.getItemAtPosition(position).toString()
-                        saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
+                        parent?.let {
+                            val selectedWorkflowName = it.getItemAtPosition(position).toString()
+                            saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
 
-                        // Get the workflow file content (either from cache or by reading the file)
-                        val workflowContent = FileUtils.readFileFromAppSpecificDirectory( this@SettingsActivity )
-                        if (workflowContent != null) {
-                            Log.d("SettingsActivity", "Workflow file content available")
-                            // Save the full workflow content to SharedPreferences
-                            saveToSharedPreferences("workflowFile", workflowContent)
-                        } else {
-                            Log.e("SettingsActivity", "Failed to get workflow file content")
+                            // Get the workflow file content (either from cache or by reading the file)
+                            val workflowContent = FileUtils.readFileFromAppSpecificDirectory(this@SettingsActivity)
+                            if (workflowContent != null) {
+                                Log.d("SettingsActivity", "Workflow file content available")
+                                // Save the full workflow content to SharedPreferences
+                                saveToSharedPreferences("workflowFile", workflowContent)
+                            } else {
+                                Log.e("SettingsActivity", "Failed to get workflow file content")
+                            }
                         }
                     }
-                    override fun onNothingSelected(parent: AdapterView<*>) {}
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
                 }
 
         // Checkboxes for internal settings

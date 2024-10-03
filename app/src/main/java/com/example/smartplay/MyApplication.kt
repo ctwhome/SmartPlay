@@ -13,6 +13,8 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.smartplay.workflow.QuestionRecorder
 import com.example.smartplay.data.DataRecorder
 import com.example.smartplay.workflow.dialogs.DialogBroadcastReceiver
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
     var isAppInForeground = false
@@ -27,6 +29,9 @@ class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         dataRecorder = DataRecorder(this)
         sharedPreferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
+        // Initialize DataRecorder
+        initializeDataRecorder()
 
         // Register DialogBroadcastReceiver
         dialogReceiver = DialogBroadcastReceiver()
@@ -50,10 +55,24 @@ class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
         })
     }
 
+    private fun initializeDataRecorder() {
+        val childId = sharedPreferences.getString("idChild", "001") ?: "001"
+        val watchId = getDeviceId()
+        val timestamp = System.currentTimeMillis()
+        dataRecorder.initializeFiles(childId, watchId, timestamp)
+    }
+
+    private fun getDeviceId(): String {
+        // Implement a method to get a unique device ID or use a default value
+        return "watch001"
+    }
+
     override fun onTerminate() {
         super.onTerminate()
         // Unregister DialogBroadcastReceiver
         unregisterReceiver(dialogReceiver)
+        // Close DataRecorder files
+        dataRecorder.closeFiles()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
