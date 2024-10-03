@@ -67,7 +67,7 @@ class DataRecorder(private val context: Context) {
         try {
             questionCsvWriter = FileWriter(questionFile, true)
             if (questionFile.length() == 0L) {
-                questionCsvWriter?.append("timestamp,questionID,questionText,answer,state\n")?.flush()
+                questionCsvWriter?.append("timestamp,questionID,questionText,answer\n")?.flush()
             }
         } catch (e: IOException) {
             Log.e(TAG, "Error creating question CSV file: ${e.message}")
@@ -154,18 +154,17 @@ class DataRecorder(private val context: Context) {
             timestamp: Long,
             questionID: String,
             questionText: String,
-            answer: String,
-            state: String
+            answer: String
     ) {
         if (!isInitialized) {
             Log.e(TAG, "DataRecorder not initialized. Call initializeFiles first.")
             return
         }
         try {
-            questionCsvWriter?.append("$timestamp,$questionID,$questionText,$answer,$state\n")?.flush()
+            questionCsvWriter?.append("$timestamp,$questionID,$questionText,$answer\n")?.flush()
             Log.d(
                     TAG,
-                    "Question data written to CSV: Timestamp=$timestamp, QuestionID=$questionID, Answer=$answer, State=$state"
+                    "Question data written to CSV: Timestamp=$timestamp, QuestionID=$questionID, Answer=$answer"
             )
         } catch (e: IOException) {
             Log.e(TAG, "Error writing question data to CSV: ${e.message}")

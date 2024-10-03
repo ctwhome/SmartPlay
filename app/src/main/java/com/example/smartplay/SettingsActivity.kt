@@ -74,7 +74,7 @@ class SettingsActivity : AppCompatActivity() {
 
         // Child ID Input
         val idInput: EditText = findViewById(R.id.id_input)
-        idInput.setText(sharedPref.getString("idChild", "001"))
+        idInput.setText(sharedPref.getString("idChild", "000"))
         idInput.addTextChangedListener(
                 object : TextWatcher {
                     override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}

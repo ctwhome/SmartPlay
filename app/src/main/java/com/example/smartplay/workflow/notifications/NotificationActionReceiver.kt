@@ -21,7 +21,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             val appContext = context.applicationContext
             if (appContext is QuestionRecorder) {
                 val timestamp = System.currentTimeMillis()
-                appContext.writeQuestionsToCSV(timestamp, questionId.toString(), questionTitle, answer, "answered")
+                appContext.writeQuestionsToCSV(timestamp, questionId.toString(), questionTitle, answer)
                 Log.d(TAG, "Answer recorded for question $questionId")
             } else {
                 Log.e(TAG, "Application context does not implement QuestionRecorder")

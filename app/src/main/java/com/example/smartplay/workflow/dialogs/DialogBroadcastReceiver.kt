@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.smartplay.MyApplication
+import com.example.smartplay.RecordingActivity
 import com.example.smartplay.workflow.Question
 import com.example.smartplay.workflow.notifications.NotificationHelper
 
@@ -25,27 +26,28 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
 
     private fun showCustomDialog(context: Context, question: Question) {
         val application = context.applicationContext as MyApplication
+        val isAppInForeground = application.isAppInForeground
         val currentActivity = application.currentActivity
 
-        if (currentActivity != null) {
+        if (isAppInForeground && currentActivity is RecordingActivity) {
             currentActivity.runOnUiThread {
                 val dialogManager = DialogManager(currentActivity) { q, answer ->
                     // Handle the answer here
                     Log.d(TAG, "Answer selected: $answer for question ${q.question_id}")
-                    // You might want to send this answer to a service or repository
-                    application.writeQuestionsToCSV(
+                    // Record the question answer using the static method in RecordingActivity
+                    RecordingActivity.recordQuestionAnsweredStatic(
+                        context,
                         System.currentTimeMillis(),
                         q.question_id.toString(),
                         q.question_title,
-                        answer,
-                        "answered"
+                        answer
                     )
                 }
                 dialogManager.showCustomDialog(question)
             }
         } else {
-            Log.e(TAG, "No active activity to show dialog")
-            // Fallback to showing a notification
+            Log.d(TAG, "App is not in foreground or current activity is not RecordingActivity. Showing notification.")
+            // Show a notification
             val notificationHelper = NotificationHelper(context)
             notificationHelper.showNotification(
                 question.question_id,

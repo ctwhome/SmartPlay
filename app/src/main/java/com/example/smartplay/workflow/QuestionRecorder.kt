@@ -1,4 +1,3 @@
-
 package com.example.smartplay.workflow
 
 interface QuestionRecorder {
@@ -6,7 +5,6 @@ interface QuestionRecorder {
         timestamp: Long,
         questionId: String,
         questionTitle: String,
-        answer: String,
-        state: String
+        answer: String
     )
 }

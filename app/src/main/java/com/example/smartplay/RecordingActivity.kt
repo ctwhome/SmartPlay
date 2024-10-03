@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -29,8 +30,9 @@ import com.example.smartplay.data.AudioRecorder
 import com.example.smartplay.workflow.WorkflowManager
 import com.example.smartplay.workflow.WorkflowService
 import com.example.smartplay.workflow.Workflow
+import com.example.smartplay.workflow.QuestionRecorder
 
-class RecordingActivity : AppCompatActivity() {
+class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private lateinit var sensorManager: CustomSensorManager
     private lateinit var locationManager: CustomLocationManager
@@ -44,6 +46,7 @@ class RecordingActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
 
     private var isRecording = false
+    private var isRecordingSessionActive = false
     private var lastUpdateTime: Long = 0
     private var scannedDevices: Map<String, Int> = emptyMap()
     private var selectedWorkflow: Workflow? = null
@@ -105,7 +108,7 @@ class RecordingActivity : AppCompatActivity() {
         updateSensorDataVisibility()
     }
 
-    private fun initializeManagers() {
+        private fun initializeManagers() {
         Log.d(TAG, "Initializing managers")
         sensorManager = CustomSensorManager(this)
         locationManager = CustomLocationManager(this)
@@ -127,107 +130,113 @@ class RecordingActivity : AppCompatActivity() {
 
     private fun startRecording() {
         Log.d(TAG, "startRecording() called")
-        val childId = sharedPreferences.getString("idChild", "000")
-        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
-        val timestamp = System.currentTimeMillis()
-        val watchId = getWatchId(this)
+        if (!isRecordingSessionActive) {
+            val childId = sharedPreferences.getString("idChild", "000")
+            val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
+            val timestamp = System.currentTimeMillis()
+            val watchId = getWatchId(this)
 
-        Log.d(TAG, "childId: $childId, checkBoxAudioRecording: $checkBoxAudioRecording")
+            Log.d(TAG, "childId: $childId, checkBoxAudioRecording: $checkBoxAudioRecording")
 
-        dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
+            dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
 
-        // Start managers
-        sensorManager.startListening()
-        locationManager.startListening()
-        bluetoothManager.startScanning(
-            sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
-        )
+            // Start managers
+            sensorManager.startListening()
+            locationManager.startListening()
+            bluetoothManager.startScanning(
+                sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
+            )
 
-        // Record audio
-        if (checkBoxAudioRecording?.toBoolean() == true) {
-            Log.d(TAG, "Audio recording is enabled in preferences")
-            if (checkAudioPermission()) {
-                Log.d(TAG, "Starting audio recording")
-                if (audioRecorder.startRecording()) {
-                    Log.d(TAG, "Audio recording started successfully")
+            // Record audio
+            if (checkBoxAudioRecording?.toBoolean() == true) {
+                Log.d(TAG, "Audio recording is enabled in preferences")
+                if (checkAudioPermission()) {
+                    Log.d(TAG, "Starting audio recording")
+                    if (audioRecorder.startRecording()) {
+                        Log.d(TAG, "Audio recording started successfully")
+                    } else {
+                        Log.e(TAG, "Failed to start audio recording")
+                        // Attempt to start recording again
+                        Handler(Looper.getMainLooper()).postDelayed(
+                            {
+                                Log.d(TAG, "Attempting to start audio recording again")
+                                audioRecorder.startRecording()
+                            }, 1000
+                        )
+                    }
                 } else {
-                    Log.e(TAG, "Failed to start audio recording")
-                    // Attempt to start recording again
-                    Handler(Looper.getMainLooper()).postDelayed(
-                        {
-                            Log.d(TAG, "Attempting to start audio recording again")
-                            audioRecorder.startRecording()
-                        }, 1000
-                    )
+                    Log.e(TAG, "Audio recording permission not granted")
                 }
             } else {
-                Log.e(TAG, "Audio recording permission not granted")
+                Log.d(TAG, "Audio recording is disabled in preferences")
             }
-        } else {
-            Log.d(TAG, "Audio recording is disabled in preferences")
+
+            isRecording = true
+            isRecordingSessionActive = true
+
+            // Initialize the workflow questions
+            initWorkflowQuestions()
+
+            // Start updating UI
+            startUpdatingUI()
+
+            // Update sensor data visibility
+            updateSensorDataVisibility()
+
+            // Update button visibility
+            updateButtonVisibility()
+
+            Log.d(TAG, "Recording started successfully")
         }
-
-        isRecording = true
-
-        // Initialize the workflow questions
-        initWorkflowQuestions()
-
-        // Start updating UI
-        startUpdatingUI()
-
-        // Update sensor data visibility
-        updateSensorDataVisibility()
-
-        // Update button visibility
-        updateButtonVisibility()
-
-        Log.d(TAG, "Recording started successfully")
     }
 
     private fun stopRecording() {
         Log.d(TAG, "stopRecording() called")
-        isRecording = false
-        sensorManager.stopListening()
-        locationManager.stopListening()
-        bluetoothManager.stopScanning()
-        dataRecorder.closeFiles()
+        if (isRecordingSessionActive) {
+            isRecording = false
+            isRecordingSessionActive = false
+            sensorManager.stopListening()
+            locationManager.stopListening()
+            bluetoothManager.stopScanning()
+            dataRecorder.closeFiles()
 
-        // Stop audio recording
-        val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
-        if (checkBoxAudioRecording?.toBoolean() == true) {
-            Log.d(TAG, "Stopping audio recording")
-            val audioFilePath = audioRecorder.stopRecording()
-            if (audioFilePath != null) {
-                Log.d(TAG, "Audio recording stopped successfully. File saved at: $audioFilePath")
+            // Stop audio recording
+            val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
+            if (checkBoxAudioRecording?.toBoolean() == true) {
+                Log.d(TAG, "Stopping audio recording")
+                val audioFilePath = audioRecorder.stopRecording()
+                if (audioFilePath != null) {
+                    Log.d(TAG, "Audio recording stopped successfully. File saved at: $audioFilePath")
+                } else {
+                    Log.e(TAG, "Failed to stop audio recording or save audio file")
+                }
             } else {
-                Log.e(TAG, "Failed to stop audio recording or save audio file")
+                Log.d(TAG, "Audio recording was not active")
             }
-        } else {
-            Log.d(TAG, "Audio recording was not active")
+
+            // Cancel scheduled alarms and stop the WorkflowService
+            if (selectedWorkflow != null) {
+                Log.d(TAG, "Cancelling alarms for workflow: ${selectedWorkflow!!.workflow_name}")
+                WorkflowService.cancelAlarms(this, selectedWorkflow!!)
+            } else {
+                Log.e(TAG, "Cannot cancel alarms: selectedWorkflow is null")
+            }
+            val serviceIntent = Intent(this, WorkflowService::class.java)
+            stopService(serviceIntent)
+            Log.d(TAG, "WorkflowService stopped")
+
+            // Cancel any displayed notifications
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancelAll()
+            Log.d(TAG, "All notifications cancelled")
+
+            // Update button visibility
+            updateButtonVisibility()
+
+            // Notify user
+            Toast.makeText(this, "Recording stopped and scheduler canceled.", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "Recording stopped successfully")
         }
-
-        // Cancel scheduled alarms and stop the WorkflowService
-        if (selectedWorkflow != null) {
-            Log.d(TAG, "Cancelling alarms for workflow: ${selectedWorkflow!!.workflow_name}")
-            WorkflowService.cancelAlarms(this, selectedWorkflow!!)
-        } else {
-            Log.e(TAG, "Cannot cancel alarms: selectedWorkflow is null")
-        }
-        val serviceIntent = Intent(this, WorkflowService::class.java)
-        stopService(serviceIntent)
-        Log.d(TAG, "WorkflowService stopped")
-
-        // Cancel any displayed notifications
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancelAll()
-        Log.d(TAG, "All notifications cancelled")
-
-        // Update button visibility
-        updateButtonVisibility()
-
-        // Notify user
-        Toast.makeText(this, "Recording stopped and scheduler canceled.", Toast.LENGTH_SHORT).show()
-        Log.d(TAG, "Recording stopped successfully")
     }
 
     private fun navigateToSettings() {
@@ -351,8 +360,8 @@ class RecordingActivity : AppCompatActivity() {
 
     @SuppressLint("HardwareIds")
     private fun getWatchId(context: Context): String {
-        return android.provider.Settings.Secure.getString(
-            context.contentResolver, android.provider.Settings.Secure.ANDROID_ID
+        return Settings.Secure.getString(
+            context.contentResolver, Settings.Secure.ANDROID_ID
         )
     }
 
@@ -405,8 +414,50 @@ class RecordingActivity : AppCompatActivity() {
         Log.d(TAG, "onResume() called")
     }
 
+    override fun writeQuestionsToCSV(
+        timestamp: Long,
+        questionId: String,
+        questionTitle: String,
+        answer: String
+    ) {
+        if (isRecordingSessionActive) {
+            dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer)
+            Log.d(TAG, "Data written to CSV: $timestamp, $questionId, $questionTitle, $answer")
+        } else {
+            Log.w(TAG, "Attempted to write data when recording session is not active")
+        }
+    }
+
+    fun recordQuestionAsked(timestamp: Long, questionId: String, questionTitle: String) {
+        if (isRecordingSessionActive) {
+            writeQuestionsToCSV(timestamp, questionId, questionTitle, "ASKED")
+            Log.d(TAG, "Question asked: $questionId, $questionTitle")
+        } else {
+            Log.w(TAG, "Attempted to record question asked when recording session is not active")
+        }
+    }
+
+    fun recordQuestionAnswered(timestamp: Long, questionId: String, questionTitle: String, answer: String) {
+        if (isRecordingSessionActive) {
+            writeQuestionsToCSV(timestamp, questionId, questionTitle, answer)
+            Log.d(TAG, "Question answered: $questionId, $questionTitle, $answer")
+        } else {
+            Log.w(TAG, "Attempted to record question answered when recording session is not active")
+        }
+    }
+
     companion object {
         private const val TAG = "RecordingActivity"
         private const val AUDIO_PERMISSION_REQUEST_CODE = 1001
+
+        @JvmStatic
+        fun recordQuestionAnsweredStatic(context: Context, timestamp: Long, questionId: String, questionTitle: String, answer: String) {
+            val activity = context.applicationContext
+            if (activity is RecordingActivity) {
+                activity.recordQuestionAnswered(timestamp, questionId, questionTitle, answer)
+            } else {
+                Log.e(TAG, "Unable to record question answer: context is not RecordingActivity")
+            }
+        }
     }
 }

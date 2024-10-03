@@ -55,6 +55,18 @@ class WorkflowManager(
         Log.d(TAG, "Started WorkflowService")
     }
 
+    private fun recordQuestionAsked(question: Question) {
+        val timestamp = System.currentTimeMillis()
+        Log.d(TAG, "Recording question asked ${question.question_id} at timestamp: $timestamp")
+        dataRecorder.writeQuestionData(
+            timestamp,
+            question.question_id.toString(),
+            question.question_title,
+            "ASKED"
+        )
+        Log.d(TAG, "Question asked recorded: ${question.question_id}")
+    }
+
     private fun recordAnswer(question: Question, answer: String) {
         val timestamp = System.currentTimeMillis()
         Log.d(TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp")
@@ -62,8 +74,7 @@ class WorkflowManager(
             timestamp,
             question.question_id.toString(),
             question.question_title,
-            answer,
-            "answered"
+            answer
         )
         Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }
@@ -82,6 +93,11 @@ class WorkflowManager(
             Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
             Log.d(TAG, "Number of questions in selected workflow: ${selectedWorkflow.questions.size}")
             Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
+
+            // Record that each question in the workflow is being asked
+            selectedWorkflow.questions.forEach { question ->
+                recordQuestionAsked(question)
+            }
 
             // Start the workflow service
             startWorkflowService()
