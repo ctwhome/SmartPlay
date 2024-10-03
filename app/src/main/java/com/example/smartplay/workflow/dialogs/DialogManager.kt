@@ -1,5 +1,6 @@
 package com.example.smartplay.workflow.dialogs
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.util.Log
@@ -12,58 +13,69 @@ import com.example.smartplay.ui.FlowLayout
 import com.example.smartplay.workflow.Question
 import com.example.smartplay.RecordingActivity
 
-class DialogManager(private val context: Context) {
+class DialogManager private constructor() {
     private val TAG = "DialogManager"
-    private val activeDialogs = mutableMapOf<Int, AlertDialog>()
+    private lateinit var applicationContext: Context
 
     companion object {
         @Volatile
         private var instance: DialogManager? = null
 
-        fun getInstance(context: Context): DialogManager {
+        // Move activeDialogs to the companion object
+        private val activeDialogs = mutableMapOf<Int, AlertDialog>()
+
+        fun getInstance(): DialogManager {
             return instance ?: synchronized(this) {
-                instance ?: DialogManager(context).also { instance = it }
+                instance ?: DialogManager().also { instance = it }
             }
         }
     }
 
-    fun showCustomDialog(question: Question) {
-        Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
+    fun init(context: Context) {
+        if (!::applicationContext.isInitialized) {
+            applicationContext = context.applicationContext
+        }
+    }
 
-
-        val existingDialog = activeDialogs[question.question_id]
-        if (existingDialog != null) {
-            Log.d(TAG, "Dismissing existing dialog for question ${question.question_id}")
-            existingDialog.setOnDismissListener {
+    fun showCustomDialog(question: Question, activity: Activity) {
+        Log.d(TAG, "Attempting to show custom dialog for question: ${question.question_id}")
+        activity.runOnUiThread {
+            // Close any existing dialog with the same question_id
+            activeDialogs[question.question_id]?.let { existingDialog ->
+                if (existingDialog.isShowing) {
+                    existingDialog.dismiss()
+                    Log.d(TAG, "Dismissed existing dialog for question: ${question.question_id}")
+                }
                 activeDialogs.remove(question.question_id)
-                showNewDialog(question)
             }
-            existingDialog.dismiss()
-        } else {
-            showNewDialog(question)
+            createAndShowDialog(question, activity)
         }
     }
 
-    private fun showNewDialog(question: Question) {
-        val builder = AlertDialog.Builder(context)
+    private fun createAndShowDialog(question: Question, activity: Activity) {
+        Log.d(TAG, "Creating new dialog for question: ${question.question_id}")
+        val builder = AlertDialog.Builder(activity)
         builder.setCancelable(false)
 
         val dialog = builder.create()
-        val dialogView = createCustomDialogView(question, dialog)
+        val dialogView = createCustomDialogView(question, dialog, activity)
         dialog.setView(dialogView)
 
         dialog.setOnDismissListener {
+            Log.d(TAG, "Dialog dismissed for question: ${question.question_id}")
             activeDialogs.remove(question.question_id)
+            Log.d(TAG, "Active dialogs after dismissal: ${activeDialogs.size}")
         }
 
         dialog.show()
         Log.d(TAG, "Custom alert dialog shown for question: ${question.question_id}")
 
         activeDialogs[question.question_id] = dialog
+        Log.d(TAG, "Total active dialogs: ${activeDialogs.size}")
     }
 
-    private fun createCustomDialogView(question: Question, dialog: AlertDialog): View {
-        val inflater = LayoutInflater.from(context)
+    private fun createCustomDialogView(question: Question, dialog: AlertDialog, activity: Activity): View {
+        val inflater = LayoutInflater.from(activity)
         val view = inflater.inflate(R.layout.dialog_custom_answers, null)
 
         val questionTitle = view.findViewById<TextView>(R.id.questionTitle)
@@ -72,11 +84,18 @@ class DialogManager(private val context: Context) {
         val answersLayout = view.findViewById<FlowLayout>(R.id.answersLayout)
 
         question.answers.forEach { answer ->
-            val button = Button(context).apply {
+            val button = Button(activity).apply {
                 text = answer
                 setOnClickListener {
+                    Log.d(TAG, "Answer selected for question: ${question.question_id}")
                     val timestamp = System.currentTimeMillis()
-                    (context as? RecordingActivity)?.recordQuestionAnswered(timestamp, question.question_id.toString(), question.question_title, answer)
+                    (activity as? RecordingActivity)?.recordQuestionAnswered(
+                        timestamp,
+                        question.question_id.toString(),
+                        question.question_title,
+                        answer
+                    )
+                    // Close current dialog and remove it from activeDialogs
                     dialog.dismiss()
                     activeDialogs.remove(question.question_id)
                 }
@@ -87,8 +106,23 @@ class DialogManager(private val context: Context) {
         return view
     }
 
-    fun dismissAllDialogs() {
-        activeDialogs.values.forEach { it.dismiss() }
-        activeDialogs.clear()
+    private fun closeAllDialogs(activity: Activity) {
+        Log.d(TAG, "Closing all dialogs")
+        activity.runOnUiThread {
+            val dialogsToClose = activeDialogs.values.toList()
+            dialogsToClose.forEach { dialog ->
+                if (dialog.isShowing) {
+                    dialog.dismiss()
+                    Log.d(TAG, "Dismissed a dialog")
+                }
+            }
+            activeDialogs.clear()
+            Log.d(TAG, "All dialogs closed and cleared. Active dialogs: ${activeDialogs.size}")
+        }
+    }
+
+    fun dismissAllDialogs(activity: Activity) {
+        Log.d(TAG, "Dismissing all dialogs")
+        closeAllDialogs(activity)
     }
 }

@@ -29,11 +29,15 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
         val isAppInForeground = application.isAppInForeground
         val currentActivity = application.currentActivity
 
+        Log.d(TAG, "App in foreground: $isAppInForeground, Current activity: ${currentActivity?.javaClass?.simpleName}")
+
         if (isAppInForeground && currentActivity is RecordingActivity) {
+            Log.d(TAG, "Showing dialog in RecordingActivity")
             currentActivity.runOnUiThread {
-                val dataRecorder = currentActivity.getDataRecorder()
-                val dialogManager = DialogManager(currentActivity)
-                dialogManager.showCustomDialog(question)
+                val dialogManager = DialogManager.getInstance()
+                dialogManager.init(context)
+//                dialogManager.dismissAllDialogs(currentActivity) // Dismiss any existing dialogs
+                dialogManager.showCustomDialog(question, currentActivity)
             }
         } else {
             Log.d(TAG, "App is not in foreground or current activity is not RecordingActivity. Showing notification.")
