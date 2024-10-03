@@ -29,7 +29,7 @@ class WorkflowManager(
 
     init {
         Log.d(TAG, "Initializing WorkflowManager")
-        dialogManager = DialogManager(context, dataRecorder)
+        dialogManager = DialogManager(context)
         notificationManager = NotificationManager(context)
         soundAndVibrationManager = SoundAndVibrationManager(context)
         // start the foreground service
@@ -55,17 +55,17 @@ class WorkflowManager(
         Log.d(TAG, "Started WorkflowService")
     }
 
-    private fun recordQuestionAsked(question: Question) {
-        val timestamp = System.currentTimeMillis()
-        Log.d(TAG, "Recording question asked ${question.question_id} at timestamp: $timestamp")
-        dataRecorder.writeQuestionData(
-            timestamp,
-            question.question_id.toString(),
-            question.question_title,
-            "ASKED"
-        )
-        Log.d(TAG, "Question asked recorded: ${question.question_id}")
-    }
+//    private fun recordQuestionAsked(question: Question) {
+//        val timestamp = System.currentTimeMillis()
+//        Log.d(TAG, "Recording question asked ${question.question_id} at timestamp: $timestamp")
+//        dataRecorder.writeQuestionData(
+//            timestamp,
+//            question.question_id.toString(),
+//            question.question_title,
+//            "ASKED"
+//        )
+//        Log.d(TAG, "Question asked recorded: ${question.question_id}")
+//    }
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
         Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
@@ -78,14 +78,14 @@ class WorkflowManager(
             Log.d(TAG, "Parsed workflows: ${workflows.size}")
 
             selectedWorkflow = workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
-            Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
-            Log.d(TAG, "Number of questions in selected workflow: ${selectedWorkflow.questions.size}")
-            Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
+//            Log.d(TAG, "Selected Workflow: ${selectedWorkflow.workflow_name}")
+//            Log.d(TAG, "Number of questions in selected workflow: ${selectedWorkflow.questions.size}")
+//            Log.d(TAG, "Questions: ${selectedWorkflow.questions}")
 
             // Record that each question in the workflow is being asked
-            selectedWorkflow.questions.forEach { question ->
-                recordQuestionAsked(question)
-            }
+//            selectedWorkflow.questions.forEach { question ->
+//                recordQuestionAsked(question)
+//            }
 
             // Start the workflow service
             startWorkflowService()

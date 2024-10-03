@@ -37,6 +37,10 @@ class NotificationManager(private val context: Context) {
     fun sendNotification(question: Question) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // Record that the question was asked
+        val timestamp = System.currentTimeMillis()
+
+
         val intent = Intent(context, RecordingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("EXTRA_QUESTION_ID", question.question_id)

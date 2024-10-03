@@ -32,7 +32,7 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
         if (isAppInForeground && currentActivity is RecordingActivity) {
             currentActivity.runOnUiThread {
                 val dataRecorder = currentActivity.getDataRecorder()
-                val dialogManager = DialogManager(currentActivity, dataRecorder)
+                val dialogManager = DialogManager(currentActivity)
                 dialogManager.showCustomDialog(question)
             }
         } else {

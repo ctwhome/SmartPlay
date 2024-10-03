@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.example.smartplay.RecordingActivity
 import com.example.smartplay.workflow.notifications.NotificationHelper
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -15,6 +16,14 @@ class AlarmReceiver : BroadcastReceiver() {
         val question = intent.getSerializableExtra("question") as? Question
         if (question != null) {
             Log.d(TAG, "Alarm received for question: ${question.question_id}")
+
+            // Record the question asked in the csv
+            val timestamp = System.currentTimeMillis()
+            RecordingActivity.recordQuestionAskedStatic(
+                timestamp,
+                question.question_id.toString(),
+                question.question_title
+            )
 
             if (isAppInForeground(context)) {
                 // App is in foreground, send broadcast to show custom dialog

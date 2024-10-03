@@ -10,9 +10,9 @@ import android.widget.TextView
 import com.example.smartplay.R
 import com.example.smartplay.ui.FlowLayout
 import com.example.smartplay.workflow.Question
-import com.example.smartplay.data.DataRecorder
+import com.example.smartplay.RecordingActivity
 
-class DialogManager(private val context: Context, private val dataRecorder: DataRecorder?) {
+class DialogManager(private val context: Context) {
     private val TAG = "DialogManager"
     private val activeDialogs = mutableMapOf<Int, AlertDialog>()
 
@@ -20,15 +20,16 @@ class DialogManager(private val context: Context, private val dataRecorder: Data
         @Volatile
         private var instance: DialogManager? = null
 
-        fun getInstance(context: Context, dataRecorder: DataRecorder?): DialogManager {
+        fun getInstance(context: Context): DialogManager {
             return instance ?: synchronized(this) {
-                instance ?: DialogManager(context, dataRecorder).also { instance = it }
+                instance ?: DialogManager(context).also { instance = it }
             }
         }
     }
 
     fun showCustomDialog(question: Question) {
         Log.d(TAG, "Showing custom dialog for question: ${question.question_id}")
+
 
         val existingDialog = activeDialogs[question.question_id]
         if (existingDialog != null) {
@@ -74,12 +75,8 @@ class DialogManager(private val context: Context, private val dataRecorder: Data
             val button = Button(context).apply {
                 text = answer
                 setOnClickListener {
-                    dataRecorder?.writeQuestionData(
-                        System.currentTimeMillis(),
-                        question.question_id.toString(),
-                        question.question_title,
-                        answer
-                    )
+                    val timestamp = System.currentTimeMillis()
+                    (context as? RecordingActivity)?.recordQuestionAnswered(timestamp, question.question_id.toString(), question.question_title, answer)
                     dialog.dismiss()
                     activeDialogs.remove(question.question_id)
                 }

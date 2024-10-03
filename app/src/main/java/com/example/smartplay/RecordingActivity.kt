@@ -33,7 +33,6 @@ import com.example.smartplay.workflow.Workflow
 import com.example.smartplay.workflow.QuestionRecorder
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {
-
     private lateinit var sensorManager: CustomSensorManager
     private lateinit var locationManager: CustomLocationManager
     private lateinit var bluetoothManager: CustomBluetoothManager
@@ -58,7 +57,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
                     stopRecording()
                     navigateToSettings()
                 }
-
                 RESULT_CANCELED -> {
                     Log.d(TAG, "Password entry canceled or incorrect, continuing recording without changes")
                 }
@@ -69,6 +67,9 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate() called")
         setContentView(R.layout.recording_activity)
+
+        // Set the static reference to this instance
+        currentInstance = this
 
         supportActionBar?.hide() // Hide the action bar
 
@@ -406,6 +407,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         if (isRecording) {
             stopRecording()
         }
+        // Clear the static reference when the activity is destroyed
+        currentInstance = null
     }
 
     override fun onPause() {
@@ -424,30 +427,19 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         questionTitle: String,
         answer: String
     ) {
-        if (isRecordingSessionActive) {
-            dataRecorder?.writeQuestionData(timestamp, questionId, questionTitle, answer)
-            Log.d(TAG, "Data written to CSV: $timestamp, $questionId, $questionTitle, $answer")
-        } else {
-            Log.w(TAG, "Attempted to write data when recording session is not active")
-        }
+        // Only write to CSV if dataRecorder is not null
+        dataRecorder?.writeQuestionData(timestamp, questionId, questionTitle, answer)
+        Log.d(TAG, "Data written to CSV: $timestamp, $questionId, $questionTitle, $answer")
     }
 
     fun recordQuestionAsked(timestamp: Long, questionId: String, questionTitle: String) {
-        if (isRecordingSessionActive) {
-            writeQuestionsToCSV(timestamp, questionId, questionTitle, "ASKED")
-            Log.d(TAG, "Question asked: $questionId, $questionTitle")
-        } else {
-            Log.w(TAG, "Attempted to record question asked when recording session is not active")
-        }
+        writeQuestionsToCSV(timestamp, questionId, questionTitle, "ASKED")
+        Log.d(TAG, "Question asked: $questionId, $questionTitle")
     }
 
     fun recordQuestionAnswered(timestamp: Long, questionId: String, questionTitle: String, answer: String) {
-        if (isRecordingSessionActive) {
-            writeQuestionsToCSV(timestamp, questionId, questionTitle, answer)
-            Log.d(TAG, "Question answered: $questionId, $questionTitle, $answer")
-        } else {
-            Log.w(TAG, "Attempted to record question answered when recording session is not active")
-        }
+        writeQuestionsToCSV(timestamp, questionId, questionTitle, answer)
+        Log.d(TAG, "Question answered: $questionId, $questionTitle, $answer")
     }
 
     fun getDataRecorder(): DataRecorder? {
@@ -458,14 +450,19 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         private const val TAG = "RecordingActivity"
         private const val AUDIO_PERMISSION_REQUEST_CODE = 1001
 
+        // Static reference to the current RecordingActivity instance
+        private var currentInstance: RecordingActivity? = null
+
         @JvmStatic
-        fun recordQuestionAnsweredStatic(context: Context, timestamp: Long, questionId: String, questionTitle: String, answer: String) {
-            val activity = context.applicationContext
-            if (activity is RecordingActivity) {
-                activity.recordQuestionAnswered(timestamp, questionId, questionTitle, answer)
-            } else {
-                Log.e(TAG, "Unable to record question answer: context is not RecordingActivity")
-            }
+        fun recordQuestionAskedStatic(timestamp: Long, questionId: String, questionTitle: String) {
+            currentInstance?.recordQuestionAsked(timestamp, questionId, questionTitle)
+                ?: Log.e(TAG, "Unable to record question asked: RecordingActivity instance is null")
+        }
+
+        @JvmStatic
+        fun recordQuestionAnsweredStatic(timestamp: Long, questionId: String, questionTitle: String, answer: String) {
+            currentInstance?.recordQuestionAnswered(timestamp, questionId, questionTitle, answer)
+                ?: Log.e(TAG, "Unable to record question answered: RecordingActivity instance is null")
         }
     }
 }

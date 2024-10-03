@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.example.smartplay.workflow.QuestionRecorder
+import com.example.smartplay.RecordingActivity
 
 class NotificationActionReceiver : BroadcastReceiver() {
     private val TAG = "NotificationActionReceiver"
@@ -19,12 +19,12 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
             // Record the answer
             val appContext = context.applicationContext
-            if (appContext is QuestionRecorder) {
+            if (appContext is RecordingActivity) {
                 val timestamp = System.currentTimeMillis()
-                appContext.writeQuestionsToCSV(timestamp, questionId.toString(), questionTitle, answer)
+                appContext.recordQuestionAnswered(timestamp, questionId.toString(), questionTitle, answer)
                 Log.d(TAG, "Answer recorded for question $questionId")
             } else {
-                Log.e(TAG, "Application context does not implement QuestionRecorder")
+                Log.e(TAG, "Application context is not RecordingActivity")
             }
         } else {
             Log.e(TAG, "Invalid question ID or context is null")
