@@ -29,7 +29,7 @@ class WorkflowManager(
 
     init {
         Log.d(TAG, "Initializing WorkflowManager")
-        dialogManager = DialogManager(context) { question, answer -> recordAnswer(question, answer) }
+        dialogManager = DialogManager(context, dataRecorder)
         notificationManager = NotificationManager(context)
         soundAndVibrationManager = SoundAndVibrationManager(context)
         // start the foreground service
@@ -65,18 +65,6 @@ class WorkflowManager(
             "ASKED"
         )
         Log.d(TAG, "Question asked recorded: ${question.question_id}")
-    }
-
-    private fun recordAnswer(question: Question, answer: String) {
-        val timestamp = System.currentTimeMillis()
-        Log.d(TAG, "Recording answer for question ${question.question_id} at timestamp: $timestamp")
-        dataRecorder.writeQuestionData(
-            timestamp,
-            question.question_id.toString(),
-            question.question_title,
-            answer
-        )
-        Log.d(TAG, "Answer recorded: ${question.question_id}, $answer")
     }
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {

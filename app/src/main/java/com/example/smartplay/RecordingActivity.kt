@@ -37,7 +37,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var sensorManager: CustomSensorManager
     private lateinit var locationManager: CustomLocationManager
     private lateinit var bluetoothManager: CustomBluetoothManager
-    private lateinit var dataRecorder: DataRecorder
+    private var dataRecorder: DataRecorder? = null
     private lateinit var workflowManager: WorkflowManager
     private lateinit var audioRecorder: AudioRecorder
     private lateinit var sensorDataTextView: TextView
@@ -108,13 +108,11 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         updateSensorDataVisibility()
     }
 
-        private fun initializeManagers() {
+    private fun initializeManagers() {
         Log.d(TAG, "Initializing managers")
         sensorManager = CustomSensorManager(this)
         locationManager = CustomLocationManager(this)
         bluetoothManager = CustomBluetoothManager(this)
-        dataRecorder = DataRecorder(this)
-        workflowManager = WorkflowManager(this, dataRecorder)
         audioRecorder = AudioRecorder(this)
 
         // Set up Bluetooth scan result listener
@@ -138,7 +136,12 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
             Log.d(TAG, "childId: $childId, checkBoxAudioRecording: $checkBoxAudioRecording")
 
-            dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
+            // Initialize DataRecorder
+            dataRecorder = DataRecorder(this)
+            dataRecorder?.initializeFiles(childId ?: "000", watchId, timestamp)
+
+            // Initialize WorkflowManager with the new DataRecorder
+            workflowManager = WorkflowManager(this, dataRecorder!!)
 
             // Start managers
             sensorManager.startListening()
@@ -198,7 +201,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             sensorManager.stopListening()
             locationManager.stopListening()
             bluetoothManager.stopScanning()
-            dataRecorder.closeFiles()
+            dataRecorder?.closeFiles()
+            dataRecorder = null
 
             // Stop audio recording
             val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
@@ -298,8 +302,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             "steps" to sensorManager.sessionSteps
         )
 
-        dataRecorder.writeSensorData(sensorDataMap)
-        dataRecorder.writeBluetoothData(timestamp, scannedDevices)
+        dataRecorder?.writeSensorData(sensorDataMap)
+        dataRecorder?.writeBluetoothData(timestamp, scannedDevices)
     }
 
     private fun updateSensorDataVisibility() {
@@ -421,7 +425,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         answer: String
     ) {
         if (isRecordingSessionActive) {
-            dataRecorder.writeQuestionData(timestamp, questionId, questionTitle, answer)
+            dataRecorder?.writeQuestionData(timestamp, questionId, questionTitle, answer)
             Log.d(TAG, "Data written to CSV: $timestamp, $questionId, $questionTitle, $answer")
         } else {
             Log.w(TAG, "Attempted to write data when recording session is not active")
@@ -444,6 +448,10 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         } else {
             Log.w(TAG, "Attempted to record question answered when recording session is not active")
         }
+    }
+
+    fun getDataRecorder(): DataRecorder? {
+        return dataRecorder
     }
 
     companion object {

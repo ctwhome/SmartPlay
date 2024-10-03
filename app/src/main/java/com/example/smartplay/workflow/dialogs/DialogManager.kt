@@ -10,8 +10,9 @@ import android.widget.TextView
 import com.example.smartplay.R
 import com.example.smartplay.ui.FlowLayout
 import com.example.smartplay.workflow.Question
+import com.example.smartplay.data.DataRecorder
 
-class DialogManager(private val context: Context, private val recordAnswer: (Question, String) -> Unit) {
+class DialogManager(private val context: Context, private val dataRecorder: DataRecorder?) {
     private val TAG = "DialogManager"
     private val activeDialogs = mutableMapOf<Int, AlertDialog>()
 
@@ -19,9 +20,9 @@ class DialogManager(private val context: Context, private val recordAnswer: (Que
         @Volatile
         private var instance: DialogManager? = null
 
-        fun getInstance(context: Context, recordAnswer: (Question, String) -> Unit): DialogManager {
+        fun getInstance(context: Context, dataRecorder: DataRecorder?): DialogManager {
             return instance ?: synchronized(this) {
-                instance ?: DialogManager(context, recordAnswer).also { instance = it }
+                instance ?: DialogManager(context, dataRecorder).also { instance = it }
             }
         }
     }
@@ -73,7 +74,12 @@ class DialogManager(private val context: Context, private val recordAnswer: (Que
             val button = Button(context).apply {
                 text = answer
                 setOnClickListener {
-                    recordAnswer(question, answer)
+                    dataRecorder?.writeQuestionData(
+                        System.currentTimeMillis(),
+                        question.question_id.toString(),
+                        question.question_title,
+                        answer
+                    )
                     dialog.dismiss()
                     activeDialogs.remove(question.question_id)
                 }

@@ -31,18 +31,8 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
 
         if (isAppInForeground && currentActivity is RecordingActivity) {
             currentActivity.runOnUiThread {
-                val dialogManager = DialogManager(currentActivity) { q, answer ->
-                    // Handle the answer here
-                    Log.d(TAG, "Answer selected: $answer for question ${q.question_id}")
-                    // Record the question answer using the static method in RecordingActivity
-                    RecordingActivity.recordQuestionAnsweredStatic(
-                        context,
-                        System.currentTimeMillis(),
-                        q.question_id.toString(),
-                        q.question_title,
-                        answer
-                    )
-                }
+                val dataRecorder = currentActivity.getDataRecorder()
+                val dialogManager = DialogManager(currentActivity, dataRecorder)
                 dialogManager.showCustomDialog(question)
             }
         } else {
