@@ -12,7 +12,7 @@ import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.smartplay.workflow.QuestionRecorder
 import com.example.smartplay.data.DataRecorder
-import com.example.smartplay.workflow.DialogBroadcastReceiver
+import com.example.smartplay.workflow.dialogs.DialogBroadcastReceiver
 
 class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
     var isAppInForeground = false
@@ -27,7 +27,6 @@ class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         dataRecorder = DataRecorder(this)
         sharedPreferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        initializeDataRecorder()
 
         // Register DialogBroadcastReceiver
         dialogReceiver = DialogBroadcastReceiver()
@@ -65,20 +64,6 @@ class MyApplication : Application(), LifecycleObserver, QuestionRecorder {
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onMoveToBackground() {
         isAppInForeground = false
-    }
-
-    private fun initializeDataRecorder() {
-        val childId = sharedPreferences.getString("idChild", "000")
-        val watchId = getWatchId()
-        val timestamp = System.currentTimeMillis()
-        dataRecorder.initializeFiles(childId ?: "000", watchId, timestamp)
-    }
-
-    private fun getWatchId(): String {
-        return android.provider.Settings.Secure.getString(
-            contentResolver,
-            android.provider.Settings.Secure.ANDROID_ID
-        )
     }
 
     override fun writeQuestionsToCSV(

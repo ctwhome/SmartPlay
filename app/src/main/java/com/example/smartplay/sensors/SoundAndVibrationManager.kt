@@ -1,4 +1,4 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.sensors
 
 import android.content.Context
 import android.media.MediaPlayer

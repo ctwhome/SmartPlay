@@ -5,6 +5,8 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.smartplay.data.DataRecorder
+import com.example.smartplay.sensors.SoundAndVibrationManager
+import com.example.smartplay.workflow.dialogs.DialogManager
 import com.example.smartplay.workflow.notifications.NotificationManager
 import com.example.smartplay.workflow.notifications.NotificationService
 import com.google.gson.Gson

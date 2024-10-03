@@ -14,7 +14,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.example.smartplay.sensors.PermissionManager
-import com.example.smartplay.workflow.FileUtils
+import com.example.smartplay.data.FileUtils
 
 class SettingsActivity : AppCompatActivity() {
 

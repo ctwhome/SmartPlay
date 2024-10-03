@@ -1,4 +1,4 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.workflow.dialogs
 
 import android.app.AlertDialog
 import android.content.Context
@@ -9,6 +9,7 @@ import android.widget.Button
 import android.widget.TextView
 import com.example.smartplay.R
 import com.example.smartplay.ui.FlowLayout
+import com.example.smartplay.workflow.Question
 
 class DialogManager(private val context: Context, private val recordAnswer: (Question, String) -> Unit) {
     private val TAG = "DialogManager"

@@ -1,10 +1,11 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.workflow.dialogs
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.example.smartplay.MyApplication
+import com.example.smartplay.workflow.Question
 import com.example.smartplay.workflow.notifications.NotificationHelper
 
 class DialogBroadcastReceiver : BroadcastReceiver() {
