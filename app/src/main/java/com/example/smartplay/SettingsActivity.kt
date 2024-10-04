@@ -27,7 +27,7 @@ class SettingsActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
-        // Enable and request all permissiona at the start of the application
+        // Enable and request all permissions at the start of the application
         permissionManager = PermissionManager(this)
         if (!permissionManager.allPermissionsGranted()) {
             permissionManager.requestPermissions()
@@ -36,19 +36,17 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-
-    override fun onRequestPermissionsResult( requestCode: Int, permissions: Array<String>, grantResults: IntArray ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 initializeSettings()
             } else {
                 Toast.makeText(
-                                this,
-                                "Some permissions were not granted. Some features may not work properly.",
-                                Toast.LENGTH_LONG
-                        )
-                        .show()
+                    this,
+                    "Some permissions were not granted. Some features may not work properly.",
+                    Toast.LENGTH_LONG
+                ).show()
                 initializeSettings() // Still initialize with limited functionality
             }
         }
@@ -56,6 +54,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun initializeSettings() {
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
+
+        // Set default values for sound and vibration if not set
+        if (!sharedPref.contains("checkBoxSound")) {
+            saveToSharedPreferences("checkBoxSound", "true")
+        }
+        if (!sharedPref.contains("checkBoxVibration")) {
+            saveToSharedPreferences("checkBoxVibration", "true")
+        }
 
         // Button Record
         val buttonRecordingActivity: Button = findViewById(R.id.button_record)
@@ -68,26 +74,26 @@ class SettingsActivity : AppCompatActivity() {
         val idInput: EditText = findViewById(R.id.id_input)
         idInput.setText(sharedPref.getString("idChild", "000"))
         idInput.addTextChangedListener(
-                object : TextWatcher {
-                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                    override fun afterTextChanged(s: Editable?) {
-                        saveToSharedPreferences("idChild", s.toString())
-                    }
+            object : TextWatcher {
+                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    saveToSharedPreferences("idChild", s.toString())
                 }
+            }
         )
 
         // Frequency Input
         val frequencyRate: EditText = findViewById(R.id.id_input_frequency)
         frequencyRate.setText(sharedPref.getString("frequencyRate", "1000"))
         frequencyRate.addTextChangedListener(
-                object : TextWatcher {
-                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
-                    override fun afterTextChanged(s: Editable?) {
-                        saveToSharedPreferences("frequencyRate", s.toString())
-                    }
+            object : TextWatcher {
+                override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    saveToSharedPreferences("frequencyRate", s.toString())
                 }
+            }
         )
 
         // Set focus change listeners for the EditTexts
@@ -107,30 +113,30 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         spinnerWorkflow.onItemSelectedListener =
-                object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(
-                            parent: AdapterView<*>?,
-                            view: View?,
-                            position: Int,
-                            id: Long
-                    ) {
-                        parent?.let {
-                            val selectedWorkflowName = it.getItemAtPosition(position).toString()
-                            saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    parent?.let {
+                        val selectedWorkflowName = it.getItemAtPosition(position).toString()
+                        saveToSharedPreferences("selectedWorkflow", selectedWorkflowName)
 
-                            // Get the workflow file content (either from cache or by reading the file)
-                            val workflowContent = FileUtils.readFileFromAppSpecificDirectory(this@SettingsActivity)
-                            if (workflowContent != null) {
-                                Log.d("SettingsActivity", "Workflow file content available")
-                                // Save the full workflow content to SharedPreferences
-                                saveToSharedPreferences("workflowFile", workflowContent)
-                            } else {
-                                Log.e("SettingsActivity", "Failed to get workflow file content")
-                            }
+                        // Get the workflow file content (either from cache or by reading the file)
+                        val workflowContent = FileUtils.readFileFromAppSpecificDirectory(this@SettingsActivity)
+                        if (workflowContent != null) {
+                            Log.d("SettingsActivity", "Workflow file content available")
+                            // Save the full workflow content to SharedPreferences
+                            saveToSharedPreferences("workflowFile", workflowContent)
+                        } else {
+                            Log.e("SettingsActivity", "Failed to get workflow file content")
                         }
                     }
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
                 }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
 
         // Checkboxes for internal settings
         setupCheckbox(R.id.checkBoxSound, "checkBoxSound")
@@ -152,11 +158,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupCheckbox(checkboxId: Int, preferenceName: String) {
         val checkbox: CheckBox = findViewById(checkboxId)
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
-        checkbox.isChecked = sharedPref.getString(preferenceName, "false").toBoolean()
+        checkbox.isChecked = sharedPref.getString(preferenceName, "true").toBoolean()
         checkbox.setOnCheckedChangeListener { _, isChecked ->
             saveToSharedPreferences(preferenceName, isChecked.toString())
         }
     }
+
     private fun setupFocusChangeListener(editText: EditText) {
         editText.setOnFocusChangeListener { view, hasFocus ->
             if (!hasFocus) {
@@ -164,15 +171,18 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun hideKeyboard(view: View) {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
+
     private fun getWorkflowList(): List<String> {
         /** Force reading the file always from the directory. */
         val workflowFileContent = FileUtils.readFileFromAppSpecificDirectory(this)
         return workflowFileContent?.let { FileUtils.getWorkflowNamesFromContent(it) } ?: emptyList()
     }
+
     private fun saveToSharedPreferences(keyName: String, inputValue: String) {
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
@@ -186,10 +196,12 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
         showBatteryLevel()
     }
+
     private fun showBatteryLevel() {
         val batteryLevel = getBatteryLevel()
         findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
     }
+
     private fun getBatteryLevel(): String {
         val batteryStatus: Intent? =
             IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->

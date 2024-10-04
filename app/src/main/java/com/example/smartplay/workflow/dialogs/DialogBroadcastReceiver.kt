@@ -8,6 +8,7 @@ import com.example.smartplay.MyApplication
 import com.example.smartplay.RecordingActivity
 import com.example.smartplay.workflow.Question
 import com.example.smartplay.workflow.notifications.NotificationHelper
+import com.example.smartplay.workflow.notifications.NotificationTracker
 
 class DialogBroadcastReceiver : BroadcastReceiver() {
     private val TAG = "DialogBroadcastReceiver"
@@ -18,11 +19,11 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
             if (question != null) {
                 Log.d(TAG, "Received broadcast to show dialog for question: ${question.question_id}")
 
-                // Close any existing dialogs with the same question ID or notifications
+                // Close any existing dialogs or notifications with the same question ID
                 closePreviousDialogsAndNotifications(context, question.question_id)
 
-                // Show the dialog
-                showCustomDialog(context, question)
+                // Show the dialog or notification
+                showQuestionToUser(context, question)
             } else {
                 Log.e(TAG, "No question data in intent")
             }
@@ -30,9 +31,9 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Closes any existing dialogs with the same question ID and cancels any notification with the same question ID.
+     * Closes any existing dialogs and cancels any notification with the same question ID.
      * This ensures that only one dialog or notification for a specific question is active at a time,
-     * while leaving dialogs for other questions open.
+     * while leaving dialogs and notifications for other questions open.
      */
     private fun closePreviousDialogsAndNotifications(context: Context, questionId: Int) {
         Log.d(TAG, "Checking for previous dialogs and notifications for question: $questionId")
@@ -43,12 +44,15 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
             DialogTracker.closeDialogsForQuestion(questionId)
         }
 
-        // Cancel notification if it exists
-        val notificationHelper = NotificationHelper(context)
-        notificationHelper.cancelNotification(questionId)
+        // Cancel notification with the same question ID if it exists
+        if (NotificationTracker.hasNotification(questionId)) {
+            Log.d(TAG, "Cancelling existing notification for question: $questionId")
+            val notificationHelper = NotificationHelper(context)
+            notificationHelper.cancelNotification(questionId)
+        }
     }
 
-    private fun showCustomDialog(context: Context, question: Question) {
+    private fun showQuestionToUser(context: Context, question: Question) {
         val application = context.applicationContext as MyApplication
         val isAppInForeground = application.isAppInForeground
         val currentActivity = application.currentActivity
