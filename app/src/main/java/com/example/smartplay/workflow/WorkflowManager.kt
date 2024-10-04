@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.example.smartplay.recording.DataRecorder
 import com.example.smartplay.sensors.SoundAndVibrationManager
 import com.example.smartplay.workflow.notifications.NotificationManager
 import com.example.smartplay.workflow.notifications.NotificationService
@@ -14,7 +13,6 @@ import java.lang.ref.WeakReference
 
 class WorkflowManager(
     context: Context,
-    private val dataRecorder: DataRecorder,
 ) {
     private val TAG = "WorkflowManager"
     private lateinit var workflows: List<Workflow>
@@ -37,7 +35,6 @@ class WorkflowManager(
     }
 
     private fun startWorkflowService() {
-        Log.d(TAG, "Attempting to start WorkflowService")
         val context = contextRef.get()
         if (context == null) {
             Log.e(TAG, "Context is null, cannot start WorkflowService")
@@ -52,15 +49,6 @@ class WorkflowManager(
         }
         ContextCompat.startForegroundService(context, serviceIntent)
         Log.d(TAG, "Started WorkflowService")
-    }
-
-    fun startWorkflow() {
-        Log.d(TAG, "Starting workflow")
-        if (::selectedWorkflow.isInitialized) {
-            startWorkflowService()
-        } else {
-            Log.e(TAG, "Cannot start workflow: No workflow has been initialized")
-        }
     }
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
@@ -82,6 +70,15 @@ class WorkflowManager(
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
             null
+        }
+    }
+
+    fun startWorkflow() {
+        Log.d(TAG, "Starting workflow")
+        if (::selectedWorkflow.isInitialized) {
+            startWorkflowService()
+        } else {
+            Log.e(TAG, "Cannot start workflow: No workflow has been initialized")
         }
     }
 
