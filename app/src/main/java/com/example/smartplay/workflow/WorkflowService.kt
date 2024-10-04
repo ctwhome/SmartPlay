@@ -43,9 +43,6 @@ class WorkflowService : Service() {
         }
     }
 
-    companion object {
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand called with startId: $startId")
         val workflow = intent?.getSerializableExtra("workflow") as? Workflow
