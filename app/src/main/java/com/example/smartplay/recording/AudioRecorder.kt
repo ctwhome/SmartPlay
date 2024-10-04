@@ -1,4 +1,4 @@
-package com.example.smartplay.data
+package com.example.smartplay.recording
 
 import android.Manifest
 import android.app.Activity
@@ -154,5 +154,9 @@ class AudioRecorder(private val activity: Activity) {
                 Toast.makeText(activity, "Permissions required for audio recording", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    fun checkAndRequestAudioPermission(): Boolean {
+        return checkPermissions()
     }
 }

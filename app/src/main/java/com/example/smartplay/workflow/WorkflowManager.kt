@@ -4,9 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.example.smartplay.data.DataRecorder
+import com.example.smartplay.recording.DataRecorder
 import com.example.smartplay.sensors.SoundAndVibrationManager
-import com.example.smartplay.workflow.dialogs.DialogManager
 import com.example.smartplay.workflow.notifications.NotificationManager
 import com.example.smartplay.workflow.notifications.NotificationService
 import com.google.gson.Gson
@@ -55,6 +54,14 @@ class WorkflowManager(
         Log.d(TAG, "Started WorkflowService")
     }
 
+    fun startWorkflow() {
+        Log.d(TAG, "Starting workflow")
+        if (::selectedWorkflow.isInitialized) {
+            startWorkflowService()
+        } else {
+            Log.e(TAG, "Cannot start workflow: No workflow has been initialized")
+        }
+    }
 
     fun initializeWorkflow(workflowString: String, selectedWorkflowName: String): Workflow? {
         Log.d(TAG, "Initializing workflow. Selected workflow name: $selectedWorkflowName")
@@ -68,13 +75,25 @@ class WorkflowManager(
 
             selectedWorkflow = workflows.first { it.workflow_name.trim() == selectedWorkflowName.trim() }
 
-            // Start the workflow service
-            startWorkflowService()
+            // We'll let the caller decide when to start the workflow
+            // startWorkflowService()
 
             selectedWorkflow
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing workflow JSON: ${e.message}", e)
             null
+        }
+    }
+
+    fun stopWorkflow() {
+        Log.d(TAG, "Stopping workflow")
+        val context = contextRef.get()
+        if (context != null) {
+            val serviceIntent = Intent(context, WorkflowService::class.java)
+            context.stopService(serviceIntent)
+            Log.d(TAG, "WorkflowService stopped")
+        } else {
+            Log.e(TAG, "Context is null, cannot stop WorkflowService")
         }
     }
 }

@@ -19,13 +19,13 @@
             android:layout_marginBottom="16dp"
             android:gravity="center"/>
 
-        <com.example.smartplay.ui.FlowLayout
+        <com.example.smartplay.recording.FlowLayout
             android:id="@+id/answersLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center">
             <!-- Answer buttons will be added here programmatically -->
-        </com.example.smartplay.ui.FlowLayout>
+        </com.example.smartplay.recording.FlowLayout>
 
     </LinearLayout>
 </ScrollView>

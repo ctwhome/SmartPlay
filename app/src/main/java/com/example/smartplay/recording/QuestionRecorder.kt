@@ -1,4 +1,4 @@
-package com.example.smartplay.workflow
+package com.example.smartplay.recording
 
 interface QuestionRecorder {
     fun writeQuestionsToCSV(

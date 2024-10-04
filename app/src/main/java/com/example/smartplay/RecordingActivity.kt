@@ -1,8 +1,6 @@
 package com.example.smartplay
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -11,41 +9,36 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.smartplay.sensors.CustomBluetoothManager
-import com.example.smartplay.data.DataRecorder
-import com.example.smartplay.sensors.CustomLocationManager
-import com.example.smartplay.sensors.CustomSensorManager
-import com.example.smartplay.data.AudioRecorder
-import com.example.smartplay.workflow.WorkflowManager
+import com.example.smartplay.recording.RecordingManager
 import com.example.smartplay.workflow.WorkflowService
 import com.example.smartplay.workflow.Workflow
-import com.example.smartplay.workflow.QuestionRecorder
+import com.example.smartplay.recording.QuestionRecorder
+
+// Import new component classes
+import com.example.smartplay.sensors.AudioRecorderManager
+import com.example.smartplay.sensors.BluetoothManagerWrapper
+import com.example.smartplay.sensors.SensorManagerWrapper
+import com.example.smartplay.workflow.WorkflowHandler
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {
-    private lateinit var sensorManager: CustomSensorManager
-    private lateinit var locationManager: CustomLocationManager
-    private lateinit var bluetoothManager: CustomBluetoothManager
-    private var dataRecorder: DataRecorder? = null
-    private lateinit var workflowManager: WorkflowManager
-    private lateinit var audioRecorder: AudioRecorder
+    private lateinit var recordingManager: RecordingManager
+    private lateinit var sensorManagerWrapper: SensorManagerWrapper
+    private lateinit var bluetoothManagerWrapper: BluetoothManagerWrapper
+    private lateinit var audioRecorderManager: AudioRecorderManager
+    private lateinit var workflowHandler: WorkflowHandler
     private lateinit var sensorDataTextView: TextView
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
     private lateinit var sharedPreferences: SharedPreferences
 
-    private var isRecording = false
-    private var isRecordingSessionActive = false
     private var lastUpdateTime: Long = 0
     private var scannedDevices: Map<String, Int> = emptyMap()
     private var selectedWorkflow: Workflow? = null
@@ -54,7 +47,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             when (result.resultCode) {
                 RESULT_OK -> {
-                    stopRecording()
+                    recordingManager.stopRecording()
                     navigateToSettings()
                 }
                 RESULT_CANCELED -> {
@@ -85,39 +78,54 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         initializeManagers()
 
         startButton.setOnClickListener {
-            if (!isRecording) {
+            if (!recordingManager.isRecording()) {
                 startButton.visibility = Button.GONE
                 stopButton.visibility = Button.VISIBLE
-                startRecording()
+                recordingManager.startRecording()
             }
         }
 
         stopButton.setOnClickListener {
-            if (isRecording) {
+            if (recordingManager.isRecording()) {
                 showPasswordActivity()
             }
         }
 
         // Start recording immediately when the activity is created
         Log.d(TAG, "Calling startRecording from onCreate")
-        startRecording()
+        recordingManager.startRecording()
 
         // Set initial visibility of buttons based on recording state
         updateButtonVisibility()
 
         // Set initial visibility of sensor data
         updateSensorDataVisibility()
+
+        // Initialize workflow questions
+        initWorkflowQuestions()
+
+        // Start updating UI
+        startUpdatingUI()
     }
 
     private fun initializeManagers() {
         Log.d(TAG, "Initializing managers")
-        sensorManager = CustomSensorManager(this)
-        locationManager = CustomLocationManager(this)
-        bluetoothManager = CustomBluetoothManager(this)
-        audioRecorder = AudioRecorder(this)
+        sensorManagerWrapper = SensorManagerWrapper(this)
+        bluetoothManagerWrapper = BluetoothManagerWrapper(this)
+        audioRecorderManager = AudioRecorderManager(this)
+        workflowHandler = WorkflowHandler(this)
+
+        // Initialize RecordingManager
+        recordingManager = RecordingManager(
+            context = this,
+            sensorManager = sensorManagerWrapper,
+            bluetoothManager = bluetoothManagerWrapper,
+            audioRecorder = audioRecorderManager,
+            workflowHandler = workflowHandler
+        )
 
         // Set up Bluetooth scan result listener
-        bluetoothManager.setOnScanResultListener { devices -> scannedDevices = devices }
+        bluetoothManagerWrapper.setOnScanResultListener { devices -> scannedDevices = devices }
         Log.d(TAG, "Managers initialized")
     }
 
@@ -125,123 +133,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         Log.d(TAG, "Showing password activity")
         val intent = Intent(this, PasswordActivity::class.java)
         passwordActivityLauncher.launch(intent)
-    }
-
-    private fun startRecording() {
-        Log.d(TAG, "startRecording() called")
-        if (!isRecordingSessionActive) {
-            val childId = sharedPreferences.getString("idChild", "000")
-            val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
-            val timestamp = System.currentTimeMillis()
-            val watchId = getWatchId(this)
-
-            Log.d(TAG, "childId: $childId, checkBoxAudioRecording: $checkBoxAudioRecording")
-
-            // Initialize DataRecorder
-            dataRecorder = DataRecorder(this)
-            dataRecorder?.initializeFiles(childId ?: "000", watchId, timestamp)
-
-            // Initialize WorkflowManager with the new DataRecorder
-            workflowManager = WorkflowManager(this, dataRecorder!!)
-
-            // Start managers
-            sensorManager.startListening()
-            locationManager.startListening()
-            bluetoothManager.startScanning(
-                sharedPreferences.getString("frequencyRate", "1000")?.toLong() ?: 1000
-            )
-
-            // Record audio
-            if (checkBoxAudioRecording?.toBoolean() == true) {
-                Log.d(TAG, "Audio recording is enabled in preferences")
-                if (checkAudioPermission()) {
-                    Log.d(TAG, "Starting audio recording")
-                    if (audioRecorder.startRecording()) {
-                        Log.d(TAG, "Audio recording started successfully")
-                    } else {
-                        Log.e(TAG, "Failed to start audio recording")
-                        // Attempt to start recording again
-                        Handler(Looper.getMainLooper()).postDelayed(
-                            {
-                                Log.d(TAG, "Attempting to start audio recording again")
-                                audioRecorder.startRecording()
-                            }, 1000
-                        )
-                    }
-                } else {
-                    Log.e(TAG, "Audio recording permission not granted")
-                }
-            } else {
-                Log.d(TAG, "Audio recording is disabled in preferences")
-            }
-
-            isRecording = true
-            isRecordingSessionActive = true
-
-            // Initialize the workflow questions
-            initWorkflowQuestions()
-
-            // Start updating UI
-            startUpdatingUI()
-
-            // Update sensor data visibility
-            updateSensorDataVisibility()
-
-            // Update button visibility
-            updateButtonVisibility()
-
-            Log.d(TAG, "Recording started successfully")
-        }
-    }
-
-    private fun stopRecording() {
-        Log.d(TAG, "stopRecording() called")
-        if (isRecordingSessionActive) {
-            isRecording = false
-            isRecordingSessionActive = false
-            sensorManager.stopListening()
-            locationManager.stopListening()
-            bluetoothManager.stopScanning()
-            dataRecorder?.closeFiles()
-            dataRecorder = null
-
-            // Stop audio recording
-            val checkBoxAudioRecording = sharedPreferences.getString("checkBoxAudioRecording", "true")
-            if (checkBoxAudioRecording?.toBoolean() == true) {
-                Log.d(TAG, "Stopping audio recording")
-                val audioFilePath = audioRecorder.stopRecording()
-                if (audioFilePath != null) {
-                    Log.d(TAG, "Audio recording stopped successfully. File saved at: $audioFilePath")
-                } else {
-                    Log.e(TAG, "Failed to stop audio recording or save audio file")
-                }
-            } else {
-                Log.d(TAG, "Audio recording was not active")
-            }
-
-            // Cancel scheduled alarms and stop the WorkflowService
-            if (selectedWorkflow != null) {
-                Log.d(TAG, "Cancelling alarms for workflow: ${selectedWorkflow!!.workflow_name}")
-                WorkflowService.cancelAlarms(this, selectedWorkflow!!)
-            } else {
-                Log.e(TAG, "Cannot cancel alarms: selectedWorkflow is null")
-            }
-            val serviceIntent = Intent(this, WorkflowService::class.java)
-            stopService(serviceIntent)
-            Log.d(TAG, "WorkflowService stopped")
-
-            // Cancel any displayed notifications
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.cancelAll()
-            Log.d(TAG, "All notifications cancelled")
-
-            // Update button visibility
-            updateButtonVisibility()
-
-            // Notify user
-            Toast.makeText(this, "Recording stopped and scheduler canceled.", Toast.LENGTH_SHORT).show()
-            Log.d(TAG, "Recording stopped successfully")
-        }
     }
 
     private fun navigateToSettings() {
@@ -253,8 +144,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
     private fun updateButtonVisibility() {
         runOnUiThread {
-            startButton.visibility = if (isRecording) Button.GONE else Button.VISIBLE
-            stopButton.visibility = if (isRecording) Button.VISIBLE else Button.GONE
+            startButton.visibility = if (recordingManager.isRecording()) Button.GONE else Button.VISIBLE
+            stopButton.visibility = if (recordingManager.isRecording()) Button.VISIBLE else Button.GONE
         }
     }
 
@@ -262,7 +153,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         val handler = Handler(Looper.getMainLooper())
         handler.post(object : Runnable {
             override fun run() {
-                if (isRecording && SystemClock.elapsedRealtime() - lastUpdateTime > 1000) {
+                if (recordingManager.isRecording() && SystemClock.elapsedRealtime() - lastUpdateTime > 1000) {
                     updateUI()
                     lastUpdateTime = SystemClock.elapsedRealtime()
                 }
@@ -274,37 +165,40 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     @SuppressLint("SetTextI18n")
     private fun updateUI() {
         val timestamp = System.currentTimeMillis()
+        val sensorData = sensorManagerWrapper.getSensorData()
+        val locationData = sensorManagerWrapper.getLocationData()
+
         sensorDataTextView.text = """
         ⏱️ $timestamp
-        ❤️ ${sensorManager.heartRate}
-        🌍 ${locationManager.latitude} ${locationManager.longitude}
-        🧭 ${sensorManager.magnetoX} ${sensorManager.magnetoY} ${sensorManager.magnetoZ}
-        🔀 ${sensorManager.gyroX} ${sensorManager.gyroY} ${sensorManager.gyroZ}
-        🏎️ ${sensorManager.accelX} ${sensorManager.accelY} ${sensorManager.accelZ}
-        👣 ${sensorManager.sessionSteps}
+        ❤️ ${sensorData.heartRate}
+        🌍 ${locationData.latitude} ${locationData.longitude}
+        🧭 ${sensorData.magnetoX} ${sensorData.magnetoY} ${sensorData.magnetoZ}
+        🔀 ${sensorData.gyroX} ${sensorData.gyroY} ${sensorData.gyroZ}
+        🏎️ ${sensorData.accelX} ${sensorData.accelY} ${sensorData.accelZ}
+        👣 ${sensorData.steps}
         📡 $scannedDevices
-        🎙️ ${if (audioRecorder.isRecording) "Recording" else "Not Recording"}
+        🎙️ ${if (audioRecorderManager.isRecording()) "Recording" else "Not Recording"}
         """.trimIndent()
 
         val sensorDataMap = mapOf(
             "timestamp" to timestamp,
-            "latitude" to locationManager.latitude,
-            "longitude" to locationManager.longitude,
-            "heartRate" to sensorManager.heartRate,
-            "accelX" to sensorManager.accelX,
-            "accelY" to sensorManager.accelY,
-            "accelZ" to sensorManager.accelZ,
-            "gyroX" to sensorManager.gyroX,
-            "gyroY" to sensorManager.gyroY,
-            "gyroZ" to sensorManager.gyroZ,
-            "magnetoX" to sensorManager.magnetoX,
-            "magnetoY" to sensorManager.magnetoY,
-            "magnetoZ" to sensorManager.magnetoZ,
-            "steps" to sensorManager.sessionSteps
+            "latitude" to locationData.latitude,
+            "longitude" to locationData.longitude,
+            "heartRate" to sensorData.heartRate,
+            "accelX" to sensorData.accelX,
+            "accelY" to sensorData.accelY,
+            "accelZ" to sensorData.accelZ,
+            "gyroX" to sensorData.gyroX,
+            "gyroY" to sensorData.gyroY,
+            "gyroZ" to sensorData.gyroZ,
+            "magnetoX" to sensorData.magnetoX,
+            "magnetoY" to sensorData.magnetoY,
+            "magnetoZ" to sensorData.magnetoZ,
+            "steps" to sensorData.steps
         )
 
-        dataRecorder?.writeSensorData(sensorDataMap)
-        dataRecorder?.writeBluetoothData(timestamp, scannedDevices)
+        recordingManager.recordSensorData(sensorDataMap)
+        recordingManager.recordBluetoothData(timestamp, scannedDevices)
     }
 
     private fun updateSensorDataVisibility() {
@@ -324,8 +218,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         if (selectedWorkflowName != null && workflowFileContent != null) {
             try {
-                Log.d(TAG, "Initializing workflow with WorkflowManager")
-                selectedWorkflow = workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
+                Log.d(TAG, "Initializing workflow with RecordingManager")
+                selectedWorkflow = recordingManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
                 if (selectedWorkflow != null) {
                     Log.d(TAG, "Workflow initialized successfully: ${selectedWorkflow!!.workflow_name}")
                     Log.d(TAG, "Number of questions: ${selectedWorkflow!!.questions.size}")
@@ -363,28 +257,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         }
     }
 
-    @SuppressLint("HardwareIds")
-    private fun getWatchId(context: Context): String {
-        return Settings.Secure.getString(
-            context.contentResolver, Settings.Secure.ANDROID_ID
-        )
-    }
-
-    private fun checkAudioPermission(): Boolean {
-        if (ContextCompat.checkSelfPermission(
-                this, Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.d(TAG, "Requesting audio permission")
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.RECORD_AUDIO), AUDIO_PERMISSION_REQUEST_CODE
-            )
-            return false
-        }
-        Log.d(TAG, "Audio permission already granted")
-        return true
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
@@ -393,7 +265,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             AUDIO_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d(TAG, "Audio recording permission granted")
-                    audioRecorder.startRecording()
+                    audioRecorderManager.startRecording()
                 } else {
                     Log.e(TAG, "Audio recording permission denied")
                 }
@@ -404,8 +276,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy() called")
-        if (isRecording) {
-            stopRecording()
+        if (recordingManager.isRecording()) {
+            recordingManager.stopRecording()
         }
         // Clear the static reference when the activity is destroyed
         currentInstance = null
@@ -427,8 +299,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         questionTitle: String,
         answer: String
     ) {
-        // Only write to CSV if dataRecorder is not null
-        dataRecorder?.writeQuestionData(timestamp, questionId, questionTitle, answer)
+        recordingManager.writeQuestionData(timestamp, questionId, questionTitle, answer)
         Log.d(TAG, "Data written to CSV: $timestamp, $questionId, $questionTitle, $answer")
     }
 
@@ -440,10 +311,6 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     fun recordQuestionAnswered(timestamp: Long, questionId: String, questionTitle: String, answer: String) {
         writeQuestionsToCSV(timestamp, questionId, questionTitle, answer)
         Log.d(TAG, "Question answered: $questionId, $questionTitle, $answer")
-    }
-
-    fun getDataRecorder(): DataRecorder? {
-        return dataRecorder
     }
 
     companion object {

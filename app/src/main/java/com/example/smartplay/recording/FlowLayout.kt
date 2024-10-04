@@ -1,4 +1,4 @@
-package com.example.smartplay.ui
+package com.example.smartplay.recording
 
 import android.content.Context
 import android.util.AttributeSet

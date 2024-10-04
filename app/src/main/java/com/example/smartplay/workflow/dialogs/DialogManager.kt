@@ -9,7 +9,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import com.example.smartplay.R
-import com.example.smartplay.ui.FlowLayout
+import com.example.smartplay.recording.FlowLayout // Reverted back to the recording package
 import com.example.smartplay.workflow.Question
 import com.example.smartplay.RecordingActivity
 
@@ -21,7 +21,6 @@ class DialogManager private constructor() {
         @Volatile
         private var instance: DialogManager? = null
 
-        // Move activeDialogs to the companion object
         private val activeDialogs = mutableMapOf<Int, AlertDialog>()
 
         fun getInstance(): DialogManager {
@@ -40,7 +39,6 @@ class DialogManager private constructor() {
     fun showCustomDialog(question: Question, activity: Activity) {
         Log.d(TAG, "Attempting to show custom dialog for question: ${question.question_id}")
         activity.runOnUiThread {
-            // Close any existing dialog with the same question_id
             activeDialogs[question.question_id]?.let { existingDialog ->
                 if (existingDialog.isShowing) {
                     existingDialog.dismiss()
@@ -95,7 +93,6 @@ class DialogManager private constructor() {
                         question.question_title,
                         answer
                     )
-                    // Close current dialog and remove it from activeDialogs
                     dialog.dismiss()
                     activeDialogs.remove(question.question_id)
                 }

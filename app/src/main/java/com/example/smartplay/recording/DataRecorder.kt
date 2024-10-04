@@ -1,4 +1,4 @@
-package com.example.smartplay.data
+package com.example.smartplay.recording
 
 import android.content.Context
 import android.os.Environment
