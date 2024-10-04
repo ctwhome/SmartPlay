@@ -27,8 +27,8 @@ class SettingsActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
+        // Enable and request all permissiona at the start of the application
         permissionManager = PermissionManager(this)
-
         if (!permissionManager.allPermissionsGranted()) {
             permissionManager.requestPermissions()
         } else {
@@ -36,16 +36,8 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        showBatteryLevel()
-    }
 
-    override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<String>,
-            grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult( requestCode: Int, permissions: Array<String>, grantResults: IntArray ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
@@ -156,6 +148,7 @@ class SettingsActivity : AppCompatActivity() {
         setupCheckbox(R.id.checkBoxDisplaySensorValues, "checkBoxDisplaySensorValues")
     }
 
+    /* Checkboxes and settings */
     private fun setupCheckbox(checkboxId: Int, preferenceName: String) {
         val checkbox: CheckBox = findViewById(checkboxId)
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
@@ -164,7 +157,6 @@ class SettingsActivity : AppCompatActivity() {
             saveToSharedPreferences(preferenceName, isChecked.toString())
         }
     }
-
     private fun setupFocusChangeListener(editText: EditText) {
         editText.setOnFocusChangeListener { view, hasFocus ->
             if (!hasFocus) {
@@ -172,18 +164,15 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun hideKeyboard(view: View) {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
-
     private fun getWorkflowList(): List<String> {
         /** Force reading the file always from the directory. */
         val workflowFileContent = FileUtils.readFileFromAppSpecificDirectory(this)
         return workflowFileContent?.let { FileUtils.getWorkflowNamesFromContent(it) } ?: emptyList()
     }
-
     private fun saveToSharedPreferences(keyName: String, inputValue: String) {
         val sharedPref = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
@@ -192,11 +181,15 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    /* Battery level */
+    override fun onResume() {
+        super.onResume()
+        showBatteryLevel()
+    }
     private fun showBatteryLevel() {
         val batteryLevel = getBatteryLevel()
         findViewById<TextView>(R.id.batteryLevel).text = batteryLevel
     }
-
     private fun getBatteryLevel(): String {
         val batteryStatus: Intent? =
             IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
