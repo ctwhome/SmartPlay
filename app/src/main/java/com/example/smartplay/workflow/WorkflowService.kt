@@ -44,47 +44,6 @@ class WorkflowService : Service() {
     }
 
     companion object {
-        fun cancelAlarms(context: Context, workflow: Workflow) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val TAG = "WorkflowService"
-
-            workflow.questions.forEach { question ->
-                // Cancel the initial alarm
-                val intent = Intent(context, QuestionReceiver::class.java).apply {
-                    putExtra("question", question)
-                }
-                val pendingIntentId = question.question_id
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    pendingIntentId,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                alarmManager.cancel(pendingIntent)
-                Log.d(TAG, "Canceled alarm for question ID: ${question.question_id}")
-
-                // Cancel repeated alarms if any
-                if (question.frequency > 1) {
-                    for (i in 1 until question.frequency) {
-                        val repeatedIntent = Intent(context, QuestionReceiver::class.java).apply {
-                            putExtra("question", question)
-                            putExtra("repetition", i)
-                        }
-                        val repeatedPendingIntentId = pendingIntentId + i * 1000  // Ensure unique IDs
-                        val repeatedPendingIntent = PendingIntent.getBroadcast(
-                            context,
-                            repeatedPendingIntentId,
-                            repeatedIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-                        alarmManager.cancel(repeatedPendingIntent)
-                        Log.d(TAG, "Canceled repeated alarm for question ID: ${question.question_id}, repetition: $i")
-                    }
-                }
-            }
-
-            Log.d(TAG, "All alarms canceled")
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

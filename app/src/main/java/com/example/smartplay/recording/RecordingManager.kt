@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.provider.Settings
 import com.example.smartplay.sensors.SensorManagerWrapper
-import com.example.smartplay.workflow.WorkflowHandler
+import com.example.smartplay.workflow.WorkflowManager
 import com.example.smartplay.sensors.AudioRecorderManager
 import com.example.smartplay.sensors.BluetoothManagerWrapper
 import com.example.smartplay.workflow.Workflow
@@ -14,7 +14,7 @@ class RecordingManager(
     private val sensorManager: SensorManagerWrapper,
     private val bluetoothManager: BluetoothManagerWrapper,
     private val audioRecorder: AudioRecorderManager,
-    private val workflowHandler: WorkflowHandler
+    private val workflowManager: WorkflowManager
 ) {
     private var isRecording = false
     private var dataRecorder: DataRecorder? = null
@@ -27,7 +27,7 @@ class RecordingManager(
             sensorManager.startSensors()
             bluetoothManager.startScanning()
             audioRecorder.startRecording()
-            // Removed the call to workflowHandler.initializeWorkflow() here
+            workflowManager.startWorkflow()
             isRecording = true
         }
     }
@@ -37,7 +37,7 @@ class RecordingManager(
             sensorManager.stopSensors()
             bluetoothManager.stopScanning()
             audioRecorder.stopRecording()
-            workflowHandler.stopWorkflow()
+            workflowManager.stopWorkflow()
             dataRecorder?.closeFiles()
             dataRecorder = null
             isRecording = false
@@ -68,7 +68,7 @@ class RecordingManager(
     }
 
     fun initializeWorkflow(workflowFileContent: String, selectedWorkflowName: String): Workflow? {
-        selectedWorkflow = workflowHandler.initializeWorkflow(workflowFileContent, selectedWorkflowName)
+        selectedWorkflow = workflowManager.initializeWorkflow(workflowFileContent, selectedWorkflowName)
         return selectedWorkflow
     }
 

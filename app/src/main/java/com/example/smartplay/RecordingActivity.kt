@@ -26,14 +26,14 @@ import com.example.smartplay.recording.QuestionRecorder
 import com.example.smartplay.sensors.AudioRecorderManager
 import com.example.smartplay.sensors.BluetoothManagerWrapper
 import com.example.smartplay.sensors.SensorManagerWrapper
-import com.example.smartplay.workflow.WorkflowHandler
+import com.example.smartplay.workflow.WorkflowManager
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var recordingManager: RecordingManager
     private lateinit var sensorManagerWrapper: SensorManagerWrapper
     private lateinit var bluetoothManagerWrapper: BluetoothManagerWrapper
     private lateinit var audioRecorderManager: AudioRecorderManager
-    private lateinit var workflowHandler: WorkflowHandler
+    private lateinit var workflowManager: WorkflowManager
     private lateinit var sensorDataTextView: TextView
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
@@ -113,7 +113,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         sensorManagerWrapper = SensorManagerWrapper(this)
         bluetoothManagerWrapper = BluetoothManagerWrapper(this)
         audioRecorderManager = AudioRecorderManager(this)
-        workflowHandler = WorkflowHandler(this)
+        workflowManager = WorkflowManager(this)
 
         // Initialize RecordingManager
         recordingManager = RecordingManager(
@@ -121,7 +121,7 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
             sensorManager = sensorManagerWrapper,
             bluetoothManager = bluetoothManagerWrapper,
             audioRecorder = audioRecorderManager,
-            workflowHandler = workflowHandler
+            workflowManager = workflowManager
         )
 
         // Set up Bluetooth scan result listener
