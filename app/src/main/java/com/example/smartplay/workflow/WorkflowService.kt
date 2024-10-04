@@ -50,7 +50,7 @@ class WorkflowService : Service() {
 
             workflow.questions.forEach { question ->
                 // Cancel the initial alarm
-                val intent = Intent(context, AlarmReceiver::class.java).apply {
+                val intent = Intent(context, QuestionReceiver::class.java).apply {
                     putExtra("question", question)
                 }
                 val pendingIntentId = question.question_id
@@ -66,7 +66,7 @@ class WorkflowService : Service() {
                 // Cancel repeated alarms if any
                 if (question.frequency > 1) {
                     for (i in 1 until question.frequency) {
-                        val repeatedIntent = Intent(context, AlarmReceiver::class.java).apply {
+                        val repeatedIntent = Intent(context, QuestionReceiver::class.java).apply {
                             putExtra("question", question)
                             putExtra("repetition", i)
                         }
@@ -129,7 +129,7 @@ class WorkflowService : Service() {
     private fun scheduleAlarmForQuestion(question: Question) {
         val triggerAtMillis = SystemClock.elapsedRealtime() + question.time_after_start * 1000L
 
-        val intent = Intent(this, AlarmReceiver::class.java).apply {
+        val intent = Intent(this, QuestionReceiver::class.java).apply {
             putExtra("question", question)
         }
 
@@ -154,7 +154,7 @@ class WorkflowService : Service() {
         if (question.frequency > 1) {
             for (i in 1 until question.frequency) {
                 val repeatedTriggerAtMillis = triggerAtMillis + question.time_between_repetitions * 1000L * i
-                val repeatedIntent = Intent(this, AlarmReceiver::class.java).apply {
+                val repeatedIntent = Intent(this, QuestionReceiver::class.java).apply {
                     putExtra("question", question)
                     putExtra("repetition", i)
                 }

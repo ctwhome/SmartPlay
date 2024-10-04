@@ -65,7 +65,7 @@
             android:foregroundServiceType="dataSync|location"
             android:enabled="true" />
 
-        <receiver android:name=".workflow.AlarmReceiver" />
+        <receiver android:name=".workflow.QuestionReceiver" />
 
         <!-- Updated NotificationActionReceiver declaration -->
         <receiver
