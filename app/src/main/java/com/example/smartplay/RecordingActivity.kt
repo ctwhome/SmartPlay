@@ -1,8 +1,10 @@
 package com.example.smartplay
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -10,13 +12,16 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.smartplay.recording.FlowLayout
 import com.example.smartplay.recording.RecordingManager
 import com.example.smartplay.workflow.WorkflowService
 import com.example.smartplay.workflow.Workflow
@@ -26,6 +31,7 @@ import com.example.smartplay.recording.QuestionRecorder
 import com.example.smartplay.sensors.AudioRecorderManager
 import com.example.smartplay.sensors.BluetoothManagerWrapper
 import com.example.smartplay.sensors.SensorManagerWrapper
+import com.example.smartplay.workflow.Question
 import com.example.smartplay.workflow.WorkflowManager
 
 class RecordingActivity : AppCompatActivity(), QuestionRecorder {
@@ -39,9 +45,12 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
     private lateinit var stopButton: Button
     private lateinit var sharedPreferences: SharedPreferences
 
+    private val activeDialogs = mutableMapOf<Int, AlertDialog>()
+
     private var lastUpdateTime: Long = 0
     private var scannedDevices: Map<String, Int> = emptyMap()
     private var selectedWorkflow: Workflow? = null
+
 
     private val passwordActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -106,6 +115,71 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
 
         // Start updating UI
         startUpdatingUI()
+    }
+
+    fun showCustomDialog(question: Question) {
+        runOnUiThread {
+            activeDialogs[question.question_id]?.let { existingDialog ->
+                if (existingDialog.isShowing) {
+                    existingDialog.dismiss()
+                    Log.d(TAG, "Dismissed existing dialog for question: ${question.question_id}")
+                }
+                activeDialogs.remove(question.question_id)
+            }
+
+            val builder = AlertDialog.Builder(this)
+            builder.setCancelable(false)
+
+            val dialog = builder.create()
+            val dialogView = createCustomDialogView(question, dialog)
+            dialog.setView(dialogView)
+
+            dialog.setOnDismissListener {
+                Log.d(TAG, "Dialog dismissed for question: ${question.question_id}")
+                activeDialogs.remove(question.question_id)
+            }
+
+            dialog.show()
+            Log.d(TAG, "Custom alert dialog shown for question: ${question.question_id}")
+
+            activeDialogs[question.question_id] = dialog
+        }
+    }
+
+    private fun createCustomDialogView(question: Question, dialog: AlertDialog): View {
+        val inflater = LayoutInflater.from(this)
+        val view = inflater.inflate(R.layout.dialog_custom_answers, null)
+
+        val questionTitle = view.findViewById<TextView>(R.id.questionTitle)
+        questionTitle.text = question.question_title
+
+        val answersLayout = view.findViewById<FlowLayout>(R.id.answersLayout)
+
+        question.answers.forEach { answer ->
+            val button = Button(this).apply {
+                text = answer
+                setOnClickListener {
+                    Log.d(TAG, "Answer selected for question: ${question.question_id}")
+                    val timestamp = System.currentTimeMillis()
+                    recordQuestionAnswered(timestamp, question.question_id.toString(), question.question_title, answer)
+                    dialog.dismiss()
+                    activeDialogs.remove(question.question_id)
+                }
+            }
+            answersLayout.addView(button)
+        }
+
+        return view
+    }
+
+    private fun dismissAllDialogs() {
+        Log.d(TAG, "Dismissing all dialogs")
+        activeDialogs.values.forEach { dialog ->
+            if (dialog.isShowing) {
+                dialog.dismiss()
+            }
+        }
+        activeDialogs.clear()
     }
 
     private fun initializeManagers() {
@@ -279,8 +353,8 @@ class RecordingActivity : AppCompatActivity(), QuestionRecorder {
         if (recordingManager.isRecording()) {
             recordingManager.stopRecording()
         }
-        // Clear the static reference when the activity is destroyed
-        currentInstance = null
+        // Dismiss all active dialogs
+        dismissAllDialogs()
     }
 
     override fun onPause() {

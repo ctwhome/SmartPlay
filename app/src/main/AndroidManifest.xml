@@ -67,6 +67,13 @@
 
         <receiver android:name=".workflow.QuestionReceiver" />
 
+        <receiver android:name=".workflow.dialogs.DialogBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.smartplay.SHOW_DIALOG" />
+            </intent-filter>
+        </receiver>
+
         <!-- Updated NotificationActionReceiver declaration -->
         <receiver
             android:name=".workflow.notifications.NotificationActionReceiver"

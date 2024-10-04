@@ -17,11 +17,35 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
             val question = intent.getSerializableExtra("question") as? Question
             if (question != null) {
                 Log.d(TAG, "Received broadcast to show dialog for question: ${question.question_id}")
+
+                // Close any existing dialogs with the same question ID or notifications
+                closePreviousDialogsAndNotifications(context, question.question_id)
+
+                // Show the dialog
                 showCustomDialog(context, question)
             } else {
                 Log.e(TAG, "No question data in intent")
             }
         }
+    }
+
+    /**
+     * Closes any existing dialogs with the same question ID and cancels any notification with the same question ID.
+     * This ensures that only one dialog or notification for a specific question is active at a time,
+     * while leaving dialogs for other questions open.
+     */
+    private fun closePreviousDialogsAndNotifications(context: Context, questionId: Int) {
+        Log.d(TAG, "Checking for previous dialogs and notifications for question: $questionId")
+
+        // Close dialogs with the same question ID if they exist
+        if (DialogTracker.hasDialogsForQuestion(questionId)) {
+            Log.d(TAG, "Closing existing dialogs for question: $questionId")
+            DialogTracker.closeDialogsForQuestion(questionId)
+        }
+
+        // Cancel notification if it exists
+        val notificationHelper = NotificationHelper(context)
+        notificationHelper.cancelNotification(questionId)
     }
 
     private fun showCustomDialog(context: Context, question: Question) {
@@ -35,8 +59,6 @@ class DialogBroadcastReceiver : BroadcastReceiver() {
             Log.d(TAG, "Showing dialog in RecordingActivity")
             currentActivity.runOnUiThread {
                 val dialogManager = DialogManager.getInstance()
-                dialogManager.init(context)
-//                dialogManager.dismissAllDialogs(currentActivity) // Dismiss any existing dialogs
                 dialogManager.showCustomDialog(question, currentActivity)
             }
         } else {
