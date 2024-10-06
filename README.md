@@ -74,17 +74,5 @@ By taking a **user-friendly approach**, SmartPlay aims to enhance research quali
 ### Get Involved
 For more information on how to collaborate or to see examples of workflows and data collected by SmartPlay check the [Installation and user manual instructions](./INSTALL.md). 
 
-### Useful Commands
-Here are some ADB commands you might need during setup:
-- **Connect to Device**: `adb connect <ip:port>`
-- **Install App**: `adb -s <device_id> install /path/to/your/smartplay.apk`
-- **Push workflows.json**: `adb -s <device_id> push path/to/workflows.json /sdcard/Android/data/com.example.smartplay/files/`
-- **Retrieve Data**: `adb -s <device_id> pull /sdcard/Android/data/com.example.smartplay/files/Documents ./`
-
----
-
-We hope SmartPlay makes your research more effective and insightful. If you have any questions, feel free to reach out or contribute to our GitHub!
-
-
 
 
