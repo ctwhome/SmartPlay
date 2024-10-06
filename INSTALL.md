@@ -1,89 +1,136 @@
 # Installation and Setup Instructions for SmartPlay
 
-## 1. Enable Developer Mode on the Watch
-1. On your watch, navigate to **Settings** → **Software Information**.
-2. Tap on **Software Version** multiple times until you see a message indicating that Developer Mode is enabled.
+## 1. Preparing the Device
+![Slide 16_9 - 7](https://github.com/user-attachments/assets/0687cc2d-b639-446b-88f6-b5981bda369b)
 
-## 2. Install the App
-- **For a single device** connected to your computer:
+### 1.1 Enable Developer Mode on the Watch
+1. On your watch, go to **Settings** → **Software Information**.
+2. Tap **Software Version** multiple times until Developer Mode is enabled.
 
-    ```bash
-    adb install app-release.apk
-    ```
+### 1.2 Enable Wifi Debugging
+1. Enable **Developer Options**, **ADB Debugging**, and **Debug over WiFi** on your watch.
+2. Once enabled, note the IP address and port displayed (e.g., `192.168.1.64:5555`).
 
-- **For multiple devices** connected, specify the device using `-s` with the device ID:
-
-    ```bash
-    adb -s <device_id:port> install app-release.apk
-    ```
-
-## 3. Add the Workflows File
-
-To add the `workflows.json` file to the app’s data directory, follow these steps:
-
-### Manually Create the Directory and Push the File
-1. **Create the necessary directory** on the device:
-    ```bash
-    adb -s <device_id:port> shell mkdir -p /sdcard/Android/data/com.example.smartplay/files/Documents
-    ```
-
-2. **Push the workflows.json file** to the app’s directory:
-    ```bash
-    adb -s <device_id:port> push ../sampledata/workflows.json /sdcard/Android/data/com.example.smartplay/files/
-    ```
-
-# Retrieve Files from the Device
-To pull files from the device to your computer:
-
+### 1.3 Connect via ADB
+To connect via ADB, run:
 ```bash
-adb -s <device_id:port> pull /sdcard/Android/data/com.example.smartplay/files/Documents ./
+adb connect <ip:port>
+```
+Replace `<ip:port>` with the actual IP and port.
+
+### 1.4 Restart ADB Server (if needed)
+If you encounter issues during connection:
+```bash
+adb kill-server
+adb start-server
 ```
 
-This will retrieve all files from the `/Documents` directory in the app's data folder and copy them to the current directory on your computer.
+## 2. Installing the SmartPlay Application
 
+### 2.1 Install via ADB
+1. **Single Device Installation**:
+    ```bash
+    adb install path/to/your/smartplay.apk
+    ```
+2. **Multiple Devices**: Specify the device ID:
+    ```bash
+    adb -s <device_id:port> install path/to/your/smartplay.apk
+    ```
+Replace `path/to/your/smartplay.apk` with the actual path to the SmartPlay APK file.
 
-## 6. Other Useful Commands
+## 3. Adding the Workflows File
 
-### Launch the App
-- **To launch the app** on the connected device:
+### 3.1 Set Up Workflows Directory
+After installing the app, manually create the necessary directory on the device:
+```bash
+adb -s <device_id:port> shell mkdir -p /sdcard/Android/data/com.example.smartplay/files/
+```
 
+### 3.2 Push workflows.json to Device
+1. **Copy the workflows.json** file to the app’s data directory:
+    ```bash
+    adb -s <device_id:port> push path/to/your/workflows.json /sdcard/Android/data/com.example.smartplay/files/workflows.json
+    ```
+2. **Set Permissions**:
+    ```bash
+    adb shell chmod 644 /sdcard/Android/data/com.example.smartplay/files/workflows.json
+    ```
+Ensure the file is added before launching the app for the first time.
+
+## 4. Launching the Application
+
+### 4.1 Launch via ADB
+- **Single Device**:
     ```bash
     adb shell am start -n com.example.smartplay/.MainActivity
     ```
-
-- **For multiple devices**, specify the device ID:
-
+- **Multiple Devices**:
     ```bash
     adb -s <device_id:port> shell am start -n com.example.smartplay/.MainActivity
     ```
 
-### Uninstall the App
-If you need to uninstall the app:
+## 5. Managing the SmartPlay Application
 
+### 5.1 Uninstall the App
 ```bash
 adb uninstall com.example.smartplay
 ```
 
-### Force-Stop the App
-To force-stop the app (e.g., if it’s not responding):
-
+### 5.2 Force-Stop the App
 ```bash
 adb shell am force-stop com.example.smartplay
 ```
 
-### Clear App Data
-To reset the app by clearing its data:
-
+### 5.3 Clear App Data
 ```bash
 adb shell pm clear com.example.smartplay
 ```
 
----
+## 6. Recording Files
 
-## Additional Notes:
-- Replace `<device_id:port>` with the actual device ID and port if multiple devices are connected.
-- If the `workflows.json` file push or retrieval fails due to permission issues, ensure that:
-  - The app is installed and has been run at least once.
-  - The necessary directories are created by running the app.
+### 6.1 File Storage
+- Files generated during a recording session are saved in the **Documents** directory with the format `[user_id]_[type]_[device_id]_[timestamp]`.
 
-By following these steps, you should be able to install the app, add the `workflows.json` file, launch the app, and retrieve any files from the device.
+### 6.2 File Naming
+- **user_id**: The number identifier of the user set in the settings.
+- **type**: Type of data (e.g., `SENSORS`, `AUDIO`, `BT`, `QUESTIONS`).
+- **device_id**: Unique identifier for the device.
+- **timestamp**: Exact recording time.
+
+Example: `1_AUDIO_faaab8a5585c9531_1717009923893.3gp`
+
+## 7. Retrieving Files from the Device
+
+### 7.1 Pull Files
+To retrieve files from the device:
+```bash
+adb -s <device_id:port> pull /sdcard/Android/data/com.example.smartplay/files/Documents ./
+```
+This will copy the contents from the **Documents** directory to the current directory on your computer.
+
+## 8. Connecting the Smartwatch via WiFi Debugging
+If installing over USB fails, try **WiFi Debugging**:
+1. **Enable Developer Options, ADB Debugging, and Debug Over WiFi** on the watch.
+2. Connect using:
+    ```bash
+    adb connect ip:port
+    ```
+3. Install APK:
+    ```bash
+    adb -s ip:port install path/to/your/app-debug.apk
+    ```
+
+## 9. Additional Notes
+- Replace `<device_id:port>` with the actual device ID and port.
+- If you face permission issues while pushing the `workflows.json`, ensure:
+  - The app has been installed and launched at least once.
+  - The required directories are created.
+
+## 10. Useful ADB Commands
+
+| Description             | Command                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| Connect to a device     | `adb connect 192.168.1.64:5555`                           |
+| Install app             | `adb -s 192.168.1.148:5555 install ./app-debug.apk`       |
+| Uninstall app           | `adb -s 192.168.1.148:5555 uninstall com.example.smartplay`|
+| List installed packages | `adb -s 192.168.1.148:5555 shell pm list packages`        |
