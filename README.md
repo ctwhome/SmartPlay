@@ -1,4 +1,3 @@
-
 # SmartPlay: A WearOS App for Measuring Play
 
 Welcome to **SmartPlay**! SmartPlay is a smartwatch application for Android OS Wear designed to collect real-time data on children’s play experiences, using a data-driven interdisciplinary approach. Developed in collaboration with researchers from developmental psychology and human-media interaction, SmartPlay aims to support research in play behaviors, health, and more.
@@ -73,6 +72,4 @@ By taking a **user-friendly approach**, SmartPlay aims to enhance research quali
 
 ### Get Involved
 For more information on how to collaborate or to see examples of workflows and data collected by SmartPlay check the [Installation and user manual instructions](./INSTALL.md). 
-
-
 
