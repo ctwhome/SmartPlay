@@ -20,8 +20,9 @@
 
         <Button
             android:id="@+id/stopButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@android:style/Widget.Holo.Button.Toggle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:text="Stop"
             android:visibility="gone" />
     </LinearLayout>

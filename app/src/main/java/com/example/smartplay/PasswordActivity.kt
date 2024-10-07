@@ -1,16 +1,19 @@
 package com.example.smartplay
 
-import android.content.Intent
+import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
-import android.widget.TextView
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-
 
 class PasswordActivity : AppCompatActivity() {
 
-    private val correctPassword = "1234"
-    private var enteredPassword = ""
+    private val correctPassword = "2122"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,40 +21,38 @@ class PasswordActivity : AppCompatActivity() {
 
         supportActionBar?.hide() // Hide the action bar
 
-        // Set up click listeners for all the buttons
-        val buttons = listOf(
-            findViewById<Button>(R.id.button0),
-            findViewById<Button>(R.id.button1),
-            findViewById<Button>(R.id.button2),
-            findViewById<Button>(R.id.button3),
-            findViewById<Button>(R.id.button4),
-            findViewById<Button>(R.id.button5),
-            findViewById<Button>(R.id.button6),
-            findViewById<Button>(R.id.button7),
-            findViewById<Button>(R.id.button8),
-            findViewById<Button>(R.id.button9)
-        )
+        val passwordInput = findViewById<EditText>(R.id.password_input)
+        val submitButton = findViewById<Button>(R.id.submit_button)
 
-        for (button in buttons) {
-            button.setOnClickListener {
-                // Append the number to the entered password
-                enteredPassword += button.text
-
-                // Update the TextView to reflect the entered password
-                findViewById<TextView>(R.id.password_text).text = enteredPassword
-
-                // If the entered password is correct, navigate to the main activity
-                if (enteredPassword == correctPassword) {
-                    val intent = Intent(this, SettingsActivity::class.java)
-                    startActivity(intent)
-                }
+        passwordInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                checkPassword(passwordInput.text.toString())
+                true
+            } else {
+                false
             }
         }
 
-        // Set up the clear button
-        findViewById<Button>(R.id.button_clear).setOnClickListener {
-            enteredPassword = ""
-            findViewById<TextView>(R.id.password_text).text = enteredPassword
+        submitButton.setOnClickListener {
+            checkPassword(passwordInput.text.toString())
         }
+
+        // Set focus to the password input and show the keyboard
+        passwordInput.requestFocus()
+        Handler(Looper.getMainLooper()).postDelayed({
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(passwordInput, InputMethodManager.SHOW_IMPLICIT)
+        }, 200)
     }
+
+    private fun checkPassword(enteredPassword: String) {
+        if (enteredPassword == correctPassword) {
+            setResult(RESULT_OK)
+        } else {
+            Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
+            findViewById<EditText>(R.id.password_input).text.clear()
+        }
+        finish()
+    }
+
 }

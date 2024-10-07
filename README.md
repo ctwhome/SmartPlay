@@ -1,89 +1,75 @@
-# SmartPlay
-An Android OS Wear Application to measure children's activity while playing.
+# SmartPlay: A WearOS App for Measuring Play
 
-## Setting Workflows
-To set up workflows, place the `workflows.json` file in the following path via the Device File Explorer:
-```shell
-/storage/emulated/0/Android/data/com.example.smartplay/files/workflows.json
-```
-You can find a demo `workflows.json` file in the `app/sampledata` folder of this repository.
+Welcome to **SmartPlay**! SmartPlay is a smartwatch application for Android OS Wear designed to collect real-time data on children’s play experiences, using a data-driven interdisciplinary approach. Developed in collaboration with researchers from developmental psychology and human-media interaction, SmartPlay aims to support research in play behaviors, health, and more.
 
-## Initial Setup (New Watch)
-For a Samsung Galaxy Watch v6 and above:
+![Slide 16_9 - 6](https://github.com/user-attachments/assets/fdcf84f2-49d2-49a5-b39f-731e0face6a6)
 
-1. **Pair the Watch**:
-   - Pair the watch with an Android phone using the Samsung Wearable app.
-2. **Enable Developer Mode on the Watch**:
-   - Go to `Settings` -> `About the watch` -> `Software information`.
-   - Tap the "Software information" tile multiple times until 'Developer mode turned on' message appears.
-3. **Connect the Watch to a Computer**:
-   - Connect the watch to your computer via cable or Wi-Fi. (See the steps below for Wi-Fi Debugging)
+- [Download the APK](./relesases)
+- [Installation and user manual instructions](./INSTALL.md)
+- [Data visualization dashboard](https://ctwhome.github.io/SmartPlay)
 
-## ⌚️ Installing the Application on the Device
-Ensure `adb` is installed on your computer and the watch is connected via USB or Wi-Fi.
+### Project Goal
+The primary objective of SmartPlay is to **collect subjective experiences from children during playtime**, providing valuable insights into their behavior and environment. This app is geared towards helping researchers combine interdisciplinary knowledge to capture and analyze data in a user-friendly way.
 
-```shell
-adb -s <device_id> install -r /path/to/your/app-debug.apk
-```
+### Features
+#### 1. **Sensor Data Collection**
+SmartPlay uses the sensors available on WearOS smartwatches, such as:
+- **GPS Location** to collect location data, despite its known lag issues
+- **Bluetooth receiver** for localized triangulation, which helps compensate for the limited precision of GPS sensors
+- **Heart rate** to monitor physical exertion and stress
+- **Gyroscope** and **Accelerometer** to monitor movement
+- **Magnetometer** for orientation tracking
+- **Steps counting** to track physical activity levels
+- **Audio recording** to capture environmental sounds
+- **dB intensity** to measure noise levels
+![Slide 16_9 - 5](https://github.com/user-attachments/assets/c8b4a8ad-3f52-4f98-a966-10316fa9e3f0)
+![Slide 16_9 - 7](https://github.com/user-attachments/assets/e988bcb7-1487-4923-b71a-77c12f034b81)
+![Slide 16_9 - 8](https://github.com/user-attachments/assets/65aa2e74-b520-4f3d-9a22-1f27eb586e52)
 
-Note: Installation via Wi-Fi Debugging is recommended. Please refer to the Wi-Fi Debugging section below.
 
-## Recording Files
-After a recording session, files will be generated and saved in the Documents directory. The filename format is `[user_id]_[type]_[device_id]_[timestamp]`.
 
-### Filename Breakdown:
-- **user_id**: Numeric identifier set on the settings screen.
-- **type**: Type of data in the file:
-  - `SENSORS`: Sensors data.
-  - `AUDIO`: Audio recordings.
-  - `BT`: Bluetooth scan data.
-  - `QUESTIONS`: Responses to workflow questions.
-- **device_id**: Unique identifier for the device (e.g., `faaab8a5585c9531`).
-- **timestamp**: Time when the recording was made, ensuring a unique identifier.
+These sensors provide a robust dataset to analyze play behavior, track activities, and study the interaction of children with their surroundings.
 
-Example: `1_AUDIO_faaab8a5585c9531_1717009923893.3gp` represents an audio recording for user 1, captured by device `faaab8a5585c9531` at the timestamp `1717009923893`.
+#### 2. **Customizable Alert Workflows**
+The app allows researchers to create **custom workflows** in JSON format. These workflows determine when and how notifications are sent to the child’s watch, prompting them to register data about aspects like stress levels, energy, and emotions.
 
-## Privacy
-Files are stored in the internal storage of the app's private directory. They are not directly accessible via the SD card or file explorer apps unless the device is rooted.
+Key functionality includes:
+- **Flexible notifications**: Researchers can customize the timing and frequency of alerts to suit specific study requirements.
+- **Interactive responses**: Children can use the watch to respond to prompts, providing subjective data about their experiences.
 
-## 🛜 Connecting the Smartwatch via Wi-Fi Debugging
-If installation via USB doesn't work, follow these steps for Wi-Fi Debugging:
+#### 3. **Privacy and Data Safety**
+Data privacy is a core concern in SmartPlay. The app ensures that the data is:
+- **Stored locally** in a private directory of the smartwatch, inaccessible to third-party apps unless explicitly permitted.
+- Extractable through **offline methods** only (e.g., using ADB commands), maintaining the privacy of children’s data throughout the research.
+![dashboard](https://github.com/user-attachments/assets/0d121818-197c-4a37-85b1-bd5f5b2aa919)
 
-1. On the watch, go to `Settings -> Developer options`.
-2. Enable `Developer options`.
-3. Enable `ADB debugging`.
-4. Go to `Wireless debugging` and click `+ Pair new device`.
-   - Note the IP address & port displayed on the watch.
-5. On your computer, run:
-   ```shell
-   adb pair <YOUR_IP_ADDRESS:PORT>
-   ```
-6. Once paired, connect by running:
-   ```shell
-   adb connect <YOUR_IP_ADDRESS:PORT>
-   ```
+#### 4. **User-Centric Design**
+The app is designed to be **simple, glanceable, and easy to interact with**, ensuring a seamless user experience for children. Its interface minimizes complexity to make it accessible to a younger audience.
 
-### Install APK via Wi-Fi
-Once connected, download the SmartPlay application(.apk) and install it on the whatch usin gyour computer terminal:
-```shell
-adb -s ip:port install </path/to/your/app-debug.apk>
-```
+### Sustainability and Device Support
+SmartPlay is compatible with Android WearOS devices, including but not limited to:
+- **Google Pixel Watch**
+- **Samsung Galaxy Watch**
+- **Oppo Watch**
+- **Mobvoi TicWatch**
 
-If having issues, restart the adb server:
-```shell
-adb kill-server
-adb start-server
-```
+Efforts are being made to add support for more modern sensors and devices to broaden its applicability.
 
-## 🛠️ Building the App with Android Studio
-You can build the app using Android Studio by following the standard build process.
+### Beyond the Project
+SmartPlay has broader potential applications beyond developmental psychology, including:
+- **Sports Science**: Measuring physical activity and player engagement.
+- **General Health**: Non-medical monitoring of physical and emotional wellbeing.
+- **Elderly Care**: Detecting falls or providing reminders.
 
-![Build Process](https://github.com/ctwhome/SmartPlay/assets/4195550/ff8c7315-226e-464b-80a8-f83cd2692d71)
+### Impact
+By taking a **user-friendly approach**, SmartPlay aims to enhance research quality and cost-effectiveness, with potential future applications in various disciplines beyond its initial scope. The combination of precise data collection and real-time subjective input makes it a valuable tool for researchers.
 
-## Useful Commands
-| Description             | Command                                                   |
-| ----------------------- | --------------------------------------------------------- |
-| Connect to a device     | `adb connect 192.168.1.64:5555`                           |
-| Install app             | `adb -s 192.168.1.148:5555 install ./app-debug.apk`       |
-| Uninstall app           | `adb -s 192.168.1.148:5555 uninstall com.example.smartplay`|
-| List installed packages | `adb -s 192.168.1.148:5555 shell pm list packages`        |
+### Contributors
+- **Lead Applicant**: Prof. Dr. Carolien Rieffe, University of Twente (Human-Media Interaction)
+- **Lead RSE**: Jesus Garcia Gonzalez, eScience Center (Social Sciences and Humanities)
+- **PhD Candidate**: Maedeh Nasri, University of Leiden (Developmental and Educational Psychology)
+- **Program Manager**: Dr. Pablo Lopez-Tarifa, eScience Center
+
+### Get Involved
+For more information on how to collaborate or to see examples of workflows and data collected by SmartPlay check the [Installation and user manual instructions](./INSTALL.md). 
+

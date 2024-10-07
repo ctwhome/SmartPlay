@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
+    android:rotationX="0"
     tools:context=".SettingsActivity">
 
     <ScrollView
@@ -15,71 +16,74 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <!-- Text View -->
-            <TextView
-                android:id="@+id/text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:padding="12pt"
-                android:rotationX="26"
-                android:rotationY="22"
-
-                android:text="⭐️ Smart Play!" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
 
-            <!-- Version Text View -->
-            <TextView
-                android:id="@+id/version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="12dp"
-                android:text="V 0.11 - 18-06-2024" />
+                <!-- Text View -->
+                <TextView
+                    android:id="@+id/text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:padding="12pt"
+                    android:rotation="3"
+                    android:rotationX="0"
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal">
-                <!-- Battery Level -->
+                    android:rotationY="0"
+                    android:text="⭐️ Smart Play!" />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+                    <!-- Battery Level -->
+                    <TextView
+                        android:id="@+id/batteryLevelTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="🔋" />
+                    <!-- Battery Level -->
+                    <TextView
+                        android:id="@+id/batteryLevel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="100%" />
+
+
+                </LinearLayout>
+
                 <TextView
-                    android:id="@+id/batteryLevelTitle"
+                    android:id="@+id/version3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="🔋" />
-                <!-- Battery Level -->
-                <TextView
-                    android:id="@+id/batteryLevel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="100%" />
+                    android:layout_weight="1"
+                    android:alpha="0.5"
+                    android:text="V 2.0 - Sep-2024" />
 
             </LinearLayout>
 
-        </LinearLayout>
-        </LinearLayout>
+            <Button
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:backgroundTint="#AB8EDD"
+                android:text="Start recording" />
 
             <TextView
                 android:id="@+id/settings_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Settings"
-                android:textSize="12dp"
-                />
+                android:textSize="12dp" />
 
 
             <LinearLayout
@@ -129,19 +133,12 @@
                     android:inputType="number" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/button_record"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Start recording" />
-
             <TextView
                 android:id="@+id/settingsDataText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="12dp"
-                android:text="Settings" />
+                android:text="Settings"
+                android:textSize="12dp" />
 
             <CheckBox
                 android:id="@+id/checkBoxSound"
@@ -165,7 +162,7 @@
                 android:layout_height="wrap_content"
                 android:text="Include sensor data" />
 
-<!--            Heart Rate Recording -->
+            <!--            Heart Rate Recording -->
             <CheckBox
                 android:id="@+id/checkBoxHeartRate"
                 android:layout_width="wrap_content"
@@ -315,7 +312,20 @@
             <!-- Record Button -->
             <Space
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="10dp" />
+
+
+            <CheckBox
+                android:id="@+id/checkBoxDisplaySensorValues"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="Display Sensor Values in Recording" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="15dp" />
 
             <!--            <LinearLayout-->
             <!--                android:layout_width="match_parent"-->
