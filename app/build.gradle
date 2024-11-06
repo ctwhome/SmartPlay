@@ -30,11 +30,6 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    sourceSets {
-        test {
-            java.srcDirs += ['src/main/java/com/example/smartplay/tests']
-        }
-    }
     testOptions {
         unitTests {
             includeAndroidResources = true

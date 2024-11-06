@@ -1,4 +1,4 @@
-package com.example.smartplay.tests
+package com.example.smartplay
 
 import android.widget.Button
 import android.widget.TextView

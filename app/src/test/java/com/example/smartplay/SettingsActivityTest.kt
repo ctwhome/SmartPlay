@@ -1,4 +1,4 @@
-package com.example.smartplay.tests
+package com.example.smartplay
 
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
