@@ -32,11 +32,12 @@ class NotificationService : Service() {
         Log.d(TAG, "NotificationService created")
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
+        // Start as foreground service immediately
+        startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand called with intent: $intent")
-//        startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
 
         if (intent != null) {
             val questionId = intent.getIntExtra(EXTRA_QUESTION_ID, -1)
@@ -63,97 +64,88 @@ class NotificationService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel =
-                    NotificationChannel(
-                                    CHANNEL_ID,
-                                    "SmartPlay Notifications",
-                                    NotificationManager.IMPORTANCE_HIGH
-                            )
-                            .apply {
-                                description = "Notifications for SmartPlay questions"
-                                setShowBadge(true)
-                            }
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "SmartPlay Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for SmartPlay questions"
+                setShowBadge(true)
+            }
             notificationManager.createNotificationChannel(channel)
             Log.d(TAG, "Notification channel created")
         }
     }
 
     private fun createForegroundNotification(): Notification {
-        val intent =
-                Intent(this, RecordingActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-        val pendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+        val intent = Intent(this, RecordingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("SmartPlay is running")
-                .setContentText("Tap to open the app")
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setContentIntent(pendingIntent)
-                .setOngoing(true)
-                .build()
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("SmartPlay is running")
+            .setContentText("Recording session in progress")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
     }
 
     private fun createNotification(
-            questionId: Int,
-            questionTitle: String,
-            answers: Array<String>
+        questionId: Int,
+        questionTitle: String,
+        answers: Array<String>
     ): Notification {
         Log.d(TAG, "Creating notification for question: $questionId, title: $questionTitle")
-        val intent =
-                Intent(this, RecordingActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    putExtra(EXTRA_QUESTION_ID, questionId)
-                }
+        val intent = Intent(this, RecordingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra(EXTRA_QUESTION_ID, questionId)
+        }
 
-        val pendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         val fullScreenIntent = createFullScreenIntent(questionId, questionTitle)
 
-        val notificationBuilder =
-                NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_notification)
-                        .setContentTitle("SmartPlay Question")
-                        .setContentText(questionTitle)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setContentIntent(pendingIntent)
-                        .setAutoCancel(true)
-                        .setOngoing(false)
-                        .setFullScreenIntent(fullScreenIntent, true)
-                        .extend(
-                                NotificationCompat.WearableExtender()
-                                        .setHintShowBackgroundOnly(true)
-                        )
+        val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("SmartPlay Question")
+            .setContentText(questionTitle)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setFullScreenIntent(fullScreenIntent, true)
+            .extend(
+                NotificationCompat.WearableExtender()
+                    .setHintShowBackgroundOnly(true)
+            )
 
         // Add actions for each answer
         answers.forEachIndexed { index, answer ->
-            val actionIntent =
-                    Intent(this, NotificationActionReceiver::class.java).apply {
-                        action = "com.example.smartplay.ANSWER_$index"
-                        putExtra(EXTRA_QUESTION_ID, questionId)
-                        putExtra(EXTRA_QUESTION_TITLE, questionTitle)
-                        putExtra("ANSWER", answer)
-                    }
-            val actionPendingIntent =
-                    PendingIntent.getBroadcast(
-                            this,
-                            index,
-                            actionIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+            val actionIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+                action = "com.example.smartplay.ANSWER_$index"
+                putExtra(EXTRA_QUESTION_ID, questionId)
+                putExtra(EXTRA_QUESTION_TITLE, questionTitle)
+                putExtra("ANSWER", answer)
+            }
+            val actionPendingIntent = PendingIntent.getBroadcast(
+                this,
+                index,
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
             notificationBuilder.addAction(NotificationCompat.Action(0, answer, actionPendingIntent))
         }
 
@@ -161,23 +153,23 @@ class NotificationService : Service() {
     }
 
     private fun createFullScreenIntent(questionId: Int, questionTitle: String): PendingIntent {
-        val fullScreenIntent =
-                Intent(this, RecordingActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    putExtra(EXTRA_QUESTION_ID, questionId)
-                    putExtra(EXTRA_QUESTION_TITLE, questionTitle)
-                }
+        val fullScreenIntent = Intent(this, RecordingActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra(EXTRA_QUESTION_ID, questionId)
+            putExtra(EXTRA_QUESTION_TITLE, questionTitle)
+        }
 
         return PendingIntent.getActivity(
-                this,
-                0,
-                fullScreenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            this,
+            0,
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "NotificationService destroyed")
+        stopForeground(true)
     }
 }
