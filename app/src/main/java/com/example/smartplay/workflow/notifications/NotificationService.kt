@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.smartplay.R
 import com.example.smartplay.RecordingActivity
+import com.example.smartplay.sensors.SoundAndVibrationManager
 
 class NotificationService : Service() {
     companion object {
@@ -26,11 +27,13 @@ class NotificationService : Service() {
     }
 
     private lateinit var notificationManager: NotificationManager
+    private lateinit var soundAndVibrationManager: SoundAndVibrationManager
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "NotificationService created")
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        soundAndVibrationManager = SoundAndVibrationManager(this)
         createNotificationChannel()
         // Start as foreground service immediately
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
@@ -104,6 +107,13 @@ class NotificationService : Service() {
         answers: Array<String>
     ): Notification {
         Log.d(TAG, "Creating notification for question: $questionId, title: $questionTitle")
+        try {
+            soundAndVibrationManager.vibrate()  // Add vibration when creating notification
+            Log.d(TAG, "Vibration triggered for question: $questionId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to trigger vibration for question: $questionId", e)
+        }
+
         val intent = Intent(this, RecordingActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(EXTRA_QUESTION_ID, questionId)
