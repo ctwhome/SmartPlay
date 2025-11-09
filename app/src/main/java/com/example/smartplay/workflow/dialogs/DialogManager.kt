@@ -12,10 +12,12 @@ import com.example.smartplay.R
 import com.example.smartplay.recording.FlowLayout
 import com.example.smartplay.workflow.Question
 import com.example.smartplay.RecordingActivity
+import com.example.smartplay.sensors.SoundAndVibrationManager
 
 class DialogManager private constructor() {
     private val TAG = "DialogManager"
     private lateinit var applicationContext: Context
+    private lateinit var soundAndVibrationManager: SoundAndVibrationManager
 
     companion object {
         @Volatile
@@ -31,12 +33,17 @@ class DialogManager private constructor() {
     fun init(context: Context) {
         if (!::applicationContext.isInitialized) {
             applicationContext = context.applicationContext
+            soundAndVibrationManager = SoundAndVibrationManager(applicationContext)
         }
     }
 
     fun showCustomDialog(question: Question, activity: Activity) {
         Log.d(TAG, "Attempting to show custom dialog for question: ${question.question_id}")
         activity.runOnUiThread {
+            // Add sound and vibration when showing the question
+            soundAndVibrationManager.playSound()
+            soundAndVibrationManager.vibrate()
+
             if (DialogTracker.hasDialogsForQuestion(question.question_id)) {
                 Log.d(TAG, "Closing existing dialogs for question: ${question.question_id}")
                 DialogTracker.closeDialogsForQuestion(question.question_id)

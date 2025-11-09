@@ -61,6 +61,25 @@ SmartPlay has broader potential applications beyond developmental psychology, in
 - **General Health**: Non-medical monitoring of physical and emotional wellbeing.
 - **Elderly Care**: Detecting falls or providing reminders.
 
+### Development and Testing
+
+SmartPlay includes a comprehensive test suite to ensure code quality and reliability. The tests cover:
+- File operations and JSON parsing
+- CSV data recording for sensors, bluetooth, and questions
+- Workflow management and initialization
+- Notification creation and delivery
+- Data models and serialization
+
+**Quick Start:**
+```bash
+# Run all tests
+./gradlew test
+
+# Or use Android Studio: Right-click test folder → Run Tests
+```
+
+For detailed testing information, setup instructions, troubleshooting, and best practices, see [TESTING.md](./TESTING.md)
+
 ### Impact
 By taking a **user-friendly approach**, SmartPlay aims to enhance research quality and cost-effectiveness, with potential future applications in various disciplines beyond its initial scope. The combination of precise data collection and real-time subjective input makes it a valuable tool for researchers.
 
